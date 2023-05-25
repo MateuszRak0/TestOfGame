@@ -2,8 +2,6 @@ let gamePaused = false;
 let fallingEntities = [];
 let firstSelected;
 let secondSelected;
-// End of Functions
-let entitiesCount = 0;
 const canvas = document.getElementById("game-scene");
 const slotSize = 32;
 const blaster = document.getElementById("game-entity-blaster")
@@ -11,6 +9,7 @@ const bomb = document.getElementById("game-entity-bomb");
 const smallbomb = document.getElementById("game-entity-smallbomb");
 const bombs = [blaster,bomb,smallbomb];
 let ctx = canvas.getContext("2d");
+ctx.fillStyle = "green";
 let fruits = [];
 for(let img of document.getElementsByName("game-entity")){
     fruits.push(img)
@@ -21,8 +20,8 @@ let map = new Map();
 function Slot(x,y){
     this.x = x;
     this.y = y;
-    this.realX=x*32;
-    this.realY=y*32;
+    this.realX=x*slotSize;
+    this.realY=y*slotSize;
     this.entity= false;
 
     this.loadBrothers = function(){
@@ -48,6 +47,7 @@ function Slot(x,y){
         this.entity.grounted = false;
         let buffor = this.entity;
         this.entity = false;
+        ctx.clearRect(this.realX,this.realY,slotSize,slotSize);
         return buffor
     }
 
@@ -94,21 +94,25 @@ function Entity(startX,startY=0){
     
     this.fall = function(){
         if(!this.grounted){
+            ctx.clearRect(this.x,this.y,slotSize,slotSize)
             this.y += 1.2;
             this.parent = map.returnSlotByPosition(this.x,this.y)
 
             if(!this.parent.brotherBottom){ this.grounted = true; } 
-            else if (this.parent.brotherBottom.entity){ this.grounted = true; }
+            else if (this.parent.brotherBottom.entity){ this.grounted = true;}
 
             if(this.grounted){
                 this.y = this.parent.realY;
                 this.parent.entity = this;
             }
-
             let img = this.type;
-            ctx.drawImage(img,this.x,this.y);
+            ctx.drawImage(img,this.x+2,this.y+2,28,28);
         }
     }
+
+    
+
+
 }
 
 
@@ -120,7 +124,6 @@ function Map(){
     let surface = countMapSurface();
     this.width = surface.x;
     this.height = surface.y;
-    this.surface = this.width * this.height;
 
     this.init = function(){
         Slot.prototype.parent = this;
@@ -147,34 +150,27 @@ function Map(){
         this.renderMap();
     }
 
-    this.clearMap = function(){
-        ctx.clearRect(0,0,9*32,15*32);
+    this.clearMap = function(bychunks){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
     }
 
-    this.renderMap = function(){
-        console.log("RENDERUJE")
-        ctx.strokeStyle = "#000";
-        for(let slot of this.allSlots){
+    this.renderMap = function(slots = this.allSlots){
+        for(let slot of slots){
 
                 if(slot.entity){
                     let img = slot.entity.type;
-                    ctx.shadowColor = "black";
-                    ctx.shadowOffsetY = 3;
-                    ctx.shadowOffsetX = -3;
-                    ctx.shadowBlur = 2;
-                    ctx.drawImage(img,slot.realX,slot.realY,28,28);
+                    ctx.drawImage(img,slot.realX+2,slot.realY+2,28,28);
                 }
         }
     }
 
     this.fillSlots = function(){
-        entitiesCount = 0;
         this.allSlots.forEach(slot => {
             slot.entity = new Entity();
             slot.grabEntity();
-            entitiesCount ++;
         });
     }
+    
 
     this.returnSlotByPosition = function(realX,realY){
         let address = `${Math.floor(realX/slotSize)}:${Math.floor(realY/slotSize)}`;
@@ -192,7 +188,7 @@ function startGame(){
     map.fillSlots();
     map.renderMap();
     lookForConnections();
-    gameLoop();
+    setTimeout(gameLoop,100)
 }
 
 function countMapSurface(){
@@ -233,7 +229,8 @@ function liveEntites(){
     })
     if(landed == true){
         fallingEntities = [];
-        lookForConnections();
+        if(!lookForConnections()) dropAllEntities();
+        
     }
 }
 
@@ -304,7 +301,7 @@ function useBlaster(startSlot,blasterslot){
 
 function countExplosionSurface(startSlot,power=false){
     ctx.fillStyle = "#ff000020";
-    ctx.fillRect(startSlot.realX,startSlot.realY,32,32)
+    ctx.fillRect(startSlot.realX,startSlot.realY,slotSize,slotSize)
     result = {
         toDestroy:[startSlot],
         small:[],
@@ -345,7 +342,7 @@ function useBomb(startSlot,result){
                 result.havebombs = true;
             }
         }
-        ctx.fillRect(slot.realX,slot.realY,32,32);
+        ctx.fillRect(slot.realX,slot.realY,slotSize,slotSize);
     }
     result.toDestroy = buffor;
 
@@ -431,70 +428,72 @@ function dropAllEntities(){
     }
 }
 
-function lookForConnections(slots = map.allSlots){
+function lookForConnections(){
     let found = false;
     let toDestroy = [];
     let blasters = [];
     let bigBombs = [];
     let smallBombs = [];
     
-    for(let slot of slots){
+    for(let slot of map.allSlots){
         if(slot.entity != false){
             let resultTop = slot.checkBrothers("brotherTop",slot.entity.type);
             let resultBottom = slot.checkBrothers("brotherBottom",slot.entity.type);
             let resultLeft = slot.checkBrothers("brotherLeft",slot.entity.type);
             let resultRight = slot.checkBrothers("brotherRight",slot.entity.type);
             let totalPoints = resultTop.points + resultBottom.points + resultLeft.points + resultRight.points;
-            if(totalPoints == 6){
-                blasters.push({
-                    slot:slot,
-                    toDestroy:resultTop.slots.concat(resultBottom.slots,resultLeft.slots,resultRight.slots)
-                });       
-                found = true;
-            }
-            else if(totalPoints == 4 && resultTop.points != 1){
-                bigBombs.push({
-                    slot:slot,
-                    toDestroy:resultTop.slots.concat(resultBottom.slots,resultLeft.slots,resultRight.slots)
-                });
-                found = true;
-            }
-            else if(totalPoints >= 2){
-                if(resultTop.points + resultBottom.points == 4){
+            if(totalPoints >= 2){
+                if(totalPoints == 6){
+                    blasters.push({
+                        slot:slot,
+                        toDestroy:resultTop.slots.concat(resultBottom.slots,resultLeft.slots,resultRight.slots)
+                    });       
                     found = true;
+                }
+                else if(totalPoints == 4 && resultTop.points != 1){
                     bigBombs.push({
                         slot:slot,
-                        toDestroy:resultTop.slots.concat(resultBottom.slots)
+                        toDestroy:resultTop.slots.concat(resultBottom.slots,resultLeft.slots,resultRight.slots)
                     });
-                }
-                else if(resultLeft.points + resultRight.points == 4){
                     found = true;
-                    bigBombs.push({
-                        slot:slot,
-                        toDestroy:resultLeft.slots.concat(resultRight.slots)
-                    });
                 }
-                else if(resultTop.points + resultBottom.points == 3){
-                    found = true;
-                    smallBombs.push({
-                        slot:slot,
-                        toDestroy:resultTop.slots.concat(resultBottom.slots)
-                    });
-                }
-                else if(resultLeft.points + resultRight.points == 3){
-                    found = true;
-                    smallBombs.push({
-                        slot:slot,
-                        toDestroy:resultLeft.slots.concat(resultRight.slots)
-                    });
-                }
-                else if(resultLeft.points + resultRight.points == 2){
-                    found = true;
-                    toDestroy.push(slot,resultLeft.slots,resultRight.slots);
-                }
-                else if(resultTop.points + resultBottom.points == 2){
-                    found = true;
-                    toDestroy.push(slot,resultTop.slots,resultBottom.slots);
+                else{
+                    if(resultTop.points + resultBottom.points == 4){
+                        found = true;
+                        bigBombs.push({
+                            slot:slot,
+                            toDestroy:resultTop.slots.concat(resultBottom.slots)
+                        });
+                    }
+                    else if(resultLeft.points + resultRight.points == 4){
+                        found = true;
+                        bigBombs.push({
+                            slot:slot,
+                            toDestroy:resultLeft.slots.concat(resultRight.slots)
+                        });
+                    }
+                    else if(resultTop.points + resultBottom.points == 3){
+                        found = true;
+                        smallBombs.push({
+                            slot:slot,
+                            toDestroy:resultTop.slots.concat(resultBottom.slots)
+                        });
+                    }
+                    else if(resultLeft.points + resultRight.points == 3){
+                        found = true;
+                        smallBombs.push({
+                            slot:slot,
+                            toDestroy:resultLeft.slots.concat(resultRight.slots)
+                        });
+                    }
+                    else if(resultLeft.points + resultRight.points == 2){
+                        found = true;
+                        toDestroy.push(slot,resultLeft.slots,resultRight.slots);
+                    }
+                    else if(resultTop.points + resultBottom.points == 2){
+                        found = true;
+                        toDestroy.push(slot,resultTop.slots,resultBottom.slots);
+                    }
                 }
             }
         }
@@ -527,7 +526,7 @@ function makeBombs(blasters,bigBombs,smallBombs,toDestroy){
             let type = toclear.entity.type;
             if(type != blaster && type != bomb && type != smallbomb){
                 toclear.entity = false;
-                entitiesCount --;
+                ctx.clearRect(toclear.realX,toclear.realY,slotSize,slotSize);
             }
         }
     }
@@ -536,35 +535,21 @@ function makeBombs(blasters,bigBombs,smallBombs,toDestroy){
 
 function clearSlots(slots){
     for(let slot of slots){
-        if(slot.entity){
-            slot.entity = false; 
-            entitiesCount --;
-        }
-
+        slot.entity = false; 
+        ctx.clearRect(slot.realX,slot.realY,slotSize,slotSize);
 }
 }
 
 function gameLoop(){
     if(fallingEntities.length > 0){
-        map.clearMap();
         liveEntites();
-        map.renderMap();
-    } 
-    else if(entitiesCount != map.surface){
-        dropAllEntities();
+    } else{
         addEntities();
     }
-    else{
-        
-    }
+    
     if(!gamePaused) setTimeout(gameLoop.bind(this));
 }
 
-
-
-canvas.addEventListener("mousedown",selectSlot)
-document.getElementById("start-game-button").addEventListener("click",startGame)
-document.getElementById("pause-game-button").addEventListener("click",()=>{gamePaused = true})
 
 
 
@@ -605,7 +590,9 @@ let menuPagesMenager = {
 
 menuPagesMenager.firstLoad();
 window.onload = menuPagesMenager.showPage("main-page");
-
+canvas.addEventListener("mousedown",selectSlot)
+document.getElementById("start-game-button").addEventListener("click",startGame)
+document.getElementById("pause-game-button").addEventListener("click",()=>{gamePaused = true})
 
 
 
