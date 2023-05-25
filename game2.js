@@ -1,3 +1,22 @@
+let gamePaused = false;
+let fallingEntities = [];
+let firstSelected;
+let secondSelected;
+// End of Functions
+const canvas = document.getElementById("game-scene");
+const slotSize = 32;
+const blaster = document.getElementById("game-entity-blaster")
+const bomb = document.getElementById("game-entity-bomb");
+const smallbomb = document.getElementById("game-entity-smallbomb");
+const bombs = [blaster,bomb,smallbomb];
+let ctx = canvas.getContext("2d");
+let fruits = [];
+for(let img of document.getElementsByName("game-entity")){
+    fruits.push(img)
+}
+let map = new Map();
+
+
 function Slot(x,y){
     this.x = x;
     this.y = y;
@@ -67,6 +86,7 @@ function Entity(startX,startY=0){
     this.y = startY;
     this.x = startX;
     this.type = fruits[Math.floor(Math.random() * (fruits.length))];
+    this.specialAbilities = false;
     this.grounted = false;
     this.parent;
 
@@ -96,26 +116,6 @@ function Entity(startX,startY=0){
 
 
 }
-
-// Map surface counter
-function countMapSurface(){
-    let x = Math.floor( window.innerWidth/slotSize );
-    let y = Math.floor( window.innerHeight/slotSize );
-    if(x > 8) x = 8;
-    if(y >= 14){
-        y = 12;
-    }
-    else{
-        y -= 2; // -2 to make space for the gamebar ;
-    }
-
-    if(y < 8){
-        console.log("Screen to small but play if u wanna")
-    }
-
-    return {x:x-1,y:y-1}
-}
-
 
 
 //MAP Constructor
@@ -188,374 +188,384 @@ function Map(){
     this.init();
 }
 
-/** GAME
- *  Pseudo object to store game functions , selected slots & pause
- * 
-*/
+// Functions to games
 
-function Game(){
-    this.paused = false;
-    this.fallingEntities = [];
-    this.firstSelected;
-    this.secondSelected;
+function startGame(){
+    gamePaused = false;
+    map.fillSlots();
+    map.renderMap();
+    lookForConnections();
+    gameLoop();
+}
 
-    this.startGame = function(){
-        this.paused = false;
-        map.fillSlots();
-        map.renderMap();
-        this.lookForConnections();
-        this.gameLoop();
+function countMapSurface(){
+    let x = Math.floor( window.innerWidth/slotSize );
+    let y = Math.floor( window.innerHeight/slotSize );
+    if(x > 8) x = 8;
+    if(y >= 14){
+        y = 12;
     }
-    
-    this.addEntities = function(){
-        if(this.fallingEntities.length == 0){
-            for(let slot of map.firstLine){
-                if(!slot.entity){
-                    let entity = new Entity(slot.realX,0);
-                    this.fallingEntities.push(entity);
-                }
+    else{
+        y -= 2; // -2 to make space for the gamebar ;
+    }
+
+    if(y < 8){
+        console.log("Screen to small but play if u wanna")
+    }
+
+    return {x:x-1,y:y-1}
+}    
+
+function addEntities(){
+    for(let slot of map.firstLine){
+        if(!slot.entity){
+            let entity = new Entity(slot.realX,0);
+            fallingEntities.push(entity);
+        }
+    }
+}
+
+
+function liveEntites(){
+    let landed = false;
+    for(let i = 0; i < fallingEntities.length; i++){
+        let entity = fallingEntities[i];
+        entity.fall()
+        if(entity.grounted){
+            fallingEntities.splice(i,1);
+            landed = true
+        }
+    }
+    if(landed == true){
+        lookForConnections();
+        dropAllEntities();
+    }
+}
+
+
+function selectSlot(event){
+    if(fallingEntities.length == 0){
+        let selectedSlot = map.returnSlotByPosition(event.offsetX,event.offsetY);
+        if(selectedSlot){
+            if(!firstSelected && selectedSlot.entity){
+                firstSelected = selectedSlot
             }
-        }
-    }
-
-    this.liveEntites = function(){
-        let landed = false;
-        for(let i = 0; i < this.fallingEntities.length; i++){
-            let entity = this.fallingEntities[i];
-            entity.fall()
-            if(entity.grounted){
-                this.fallingEntities.splice(i,1);
-                landed = true
-            }
-        }
-        if(landed == true){
-            this.lookForConnections();
-            this.dropAllEntities();
-        }
-    }
-
-    this.selectSlot = function(event){
-        if(this.fallingEntities.length == 0){
-            let selectedSlot = map.returnSlotByPosition(event.offsetX,event.offsetY);
-            if(selectedSlot){
-                if(!this.firstSelected && selectedSlot.entity){
-                    this.firstSelected = selectedSlot
-                }
-                else if(this.firstSelected && selectedSlot.entity && this.firstSelected.brothers.includes(selectedSlot)){
-                    this.secondSelected = selectedSlot
-                    this.moveEntities();
-                }
-                else{
-                    this.disselectAll();
-                }
-                this.focusSelected();
-            }
-
-        }
-
-    }
-
-    this.moveEntities = function(secondTime = false){
-        let buffor = this.firstSelected.entity;
-        this.firstSelected.entity = this.secondSelected.entity;
-        this.secondSelected.entity = buffor;
-        this.firstSelected.grabEntity();
-        this.secondSelected.grabEntity();
-        map.refreshMap();
-        if(!this.lookForBombs(this.firstSelected,this.secondSelected)){
-
-            if(this.lookForConnections() == false && secondTime == false){
-                setTimeout(()=>{this.moveEntities(true)},500);
+            else if(firstSelected && selectedSlot.entity && firstSelected.brothers.includes(selectedSlot)){
+                secondSelected = selectedSlot
+                moveEntities();
             }
             else{
-                this.disselectAll();
-            } 
+                disselectAll();
+            }
+            focusSelected();
         }
     }
-
-    this.useBlaster = function(startSlot,blasterslot){
-        let toremove = [startSlot,blasterslot];
-        let lastSlot = startSlot;
-        let type = startSlot.entity.type;
-        ctx.lineWidth = 5;
-        ctx.strokeStyle = "#e1ff006d";
-        ctx.beginPath();
-        for(let slot of map.allSlots){
-            if(slot.entity){
-                if(slot.entity.type == type){
-                    ctx.moveTo(lastSlot.realX+16,lastSlot.realY+16);
-                    ctx.lineTo(slot.realX+16,slot.realY+16);
-                    lastSlot = slot;
-                    toremove.push(slot);
-                }
-
-            }
-        }
-        ctx.stroke();
-        setTimeout((toremove)=>{
-            this.clearSlots(toremove);
-            this.dropAllEntities();
-        },500,toremove)
-    }
-
-    this.getExplosionSurface = function(startSlot,power=false){
-        ctx.fillStyle = "#ff000020";
-        ctx.fillRect(startSlot.realX,startSlot.realY,32,32)
-        result = {
-            toDestroy:[startSlot],
-            small:[],
-            normal:[],
-            havebombs:false
-        }
-
-        for(let brother of startSlot.brothers){
-            if(brother){
-                result.toDestroy.push(brother);
-                if(power == true){
-                    for(let secondBrother of brother.brothers){
-                        if(secondBrother){
-                            result.toDestroy.push(secondBrother);
-                        }
-                    }
-                }
-            }
-        }
-
-        return result
-    }
-
-    this.useBomb = function(startSlot,result){
-        let buffor = [startSlot];
-        for(let slot of result.toDestroy){
-            if(slot.entity && slot != startSlot){
-                if(slot.entity.type != blaster){
-                    buffor.push(slot)
-                }
-                if(slot.entity.type == smallbomb){
-                    result.small.push(slot);
-                    result.havebombs = true;
-                } 
-                else if (slot.entity.type == bomb){
-                    result.normal.push(slot);
-                    result.havebombs = true;
-                }
-            }
-            ctx.fillRect(slot.realX,slot.realY,32,32);
-        }
-        result.toDestroy = buffor;
-
-        setTimeout((result)=>{
-            this.clearSlots(result.toDestroy);
-            if(result.havebombs == true){     
-                for(let smallbomb of result.small){
-                    this.useBomb(smallbomb,this.getExplosionSurface(smallbomb));
-                }
-                for(let bomb of result.normal){
-                    this.useBomb(bomb,this.getExplosionSurface(bomb,true));
-                }
-                
-            }
-            else{
-                this.dropAllEntities();
-            }
-
-            
-        },500,result);
-        
-    }
+}
 
 
-    this.lookForBombs = function(slot1,slot2){
-        let secondSlot = false;
-        let foundedBomb = false;
+function moveEntities(secondTime = false){
+    let buffor = firstSelected.entity;
+    firstSelected.entity = secondSelected.entity;
+    secondSelected.entity = buffor;
+    firstSelected.grabEntity();
+    secondSelected.grabEntity();
+    map.refreshMap();
+    if(!lookForBombs(firstSelected,secondSelected)){
 
-        if(bombs.includes(slot1.entity.type)){
-            foundedBomb = slot1;
-            secondSlot = slot2;
-        }
-        else if(bombs.includes(slot2.entity.type)){
-            foundedBomb = slot2;
-            secondSlot = slot1;
+        if(lookForConnections() == false && secondTime == false){
+            setTimeout(()=>{moveEntities(true)},500);
         }
         else{
-            return false
-        }
-
-        if(foundedBomb){
-            if(foundedBomb.entity.type == blaster){
-                this.useBlaster(secondSlot,foundedBomb);
-            }
-            else if (foundedBomb.entity.type == bomb){
-                this.useBomb(foundedBomb,this.getExplosionSurface(foundedBomb,true))
-            }
-            else{
-                this.useBomb(foundedBomb,this.getExplosionSurface(foundedBomb))
-            }
-        }
-
-        return true
+            disselectAll();
+        } 
     }
-
-    this.disselectAll = function(){
-        this.firstSelected = false;
-        this.secondSelected = false;
-        map.refreshMap();
-    }
+}
 
 
-    this.focusSelected = function(){
-        if(this.firstSelected){
-            ctx.clearRect(this.firstSelected.realX,this.firstSelected.realY,30,30);
-            let img = this.firstSelected.entity.type;
-            ctx.drawImage(img,this.firstSelected.realX,this.firstSelected.realY);
-        }
-        if(this.secondSelected){
-            ctx.clearRect(this.secondSelected.realX,this.secondSelected.realY,30,30);
-            let img = this.secondSelected.entity.type;
-            ctx.drawImage(img,this.secondSelected.realX,this.secondSelected.realY);
+function useBlaster(startSlot,blasterslot){
+    let toremove = [startSlot,blasterslot];
+    let lastSlot = startSlot;
+    let type = startSlot.entity.type;
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "#e1ff006d";
+    ctx.beginPath();
+    for(let slot of map.allSlots){
+        if(slot.entity){
+            if(slot.entity.type == type){
+                ctx.moveTo(lastSlot.realX+16,lastSlot.realY+16);
+                ctx.lineTo(slot.realX+16,slot.realY+16);
+                lastSlot = slot;
+                toremove.push(slot);
+            }
+
         }
     }
+    ctx.stroke();
+    setTimeout((toremove)=>{
+        this.clearSlots(toremove);
+        dropAllEntities();
+    },500,toremove)
+}
 
-    this.dropAllEntities = function(){
-        for(let slot of map.allSlots){
-            if(slot.brotherBottom){
-                if(!slot.brotherBottom.entity){
-                    let dropedEntity = slot.dropEntity();
-                    if(dropedEntity){
-                        this.fallingEntities.push(dropedEntity);
+function countExplosionSurface(startSlot,power=false){
+    ctx.fillStyle = "#ff000020";
+    ctx.fillRect(startSlot.realX,startSlot.realY,32,32)
+    result = {
+        toDestroy:[startSlot],
+        small:[],
+        normal:[],
+        havebombs:false
+    }
+
+    for(let brother of startSlot.brothers){
+        if(brother){
+            result.toDestroy.push(brother);
+            if(power == true){
+                for(let secondBrother of brother.brothers){
+                    if(secondBrother){
+                        result.toDestroy.push(secondBrother);
                     }
                 }
             }
         }
     }
 
-    
+    return result
+}
 
-    this.lookForConnections = function(){
-        let found = false;
-        let toDestroy = [];
-        let blasters = [];
-        let bigBombs = [];
-        let smallBombs = [];
+
+function useBomb(startSlot,result){
+    let buffor = [startSlot];
+    for(let slot of result.toDestroy){
+        if(slot.entity && slot != startSlot){
+            if(slot.entity.type != blaster){
+                buffor.push(slot)
+            }
+            if(slot.entity.type == smallbomb){
+                result.small.push(slot);
+                result.havebombs = true;
+            } 
+            else if (slot.entity.type == bomb){
+                result.normal.push(slot);
+                result.havebombs = true;
+            }
+        }
+        ctx.fillRect(slot.realX,slot.realY,32,32);
+    }
+    result.toDestroy = buffor;
+
+    setTimeout((result)=>{
+        clearSlots(result.toDestroy);
+        if(result.havebombs == true){     
+            for(let smallbomb of result.small){
+                useBomb(smallbomb,countExplosionSurface(smallbomb));
+            }
+            for(let bomb of result.normal){
+                useBomb(bomb,countExplosionSurface(bomb,true));
+            }
+            
+        }
+        else{
+            dropAllEntities();
+        }
+
         
-        for(let slot of map.allSlots){
-            if(slot.entity != false){
-                let resultTop = slot.checkBrothers("brotherTop",slot.entity.type);
-                let resultBottom = slot.checkBrothers("brotherBottom",slot.entity.type);
-                let resultLeft = slot.checkBrothers("brotherLeft",slot.entity.type);
-                let resultRight = slot.checkBrothers("brotherRight",slot.entity.type);
-                let totalPoints = resultTop.points + resultBottom.points + resultLeft.points + resultRight.points;
-                if(totalPoints == 6){
-                    blasters.push({
-                        slot:slot,
-                        toDestroy:resultTop.slots.concat(resultBottom.slots,resultLeft.slots,resultRight.slots)
-                    });       
-                    found = true;
+    },500,result);
+}    
+
+function lookForBombs(slot1,slot2){
+    let secondSlot = false;
+    let foundedBomb = false;
+
+    if(bombs.includes(slot1.entity.type)){
+        foundedBomb = slot1;
+        secondSlot = slot2;
+    }
+    else if(bombs.includes(slot2.entity.type)){
+        foundedBomb = slot2;
+        secondSlot = slot1;
+    }
+    else{
+        return false
+    }
+
+    if(foundedBomb){
+        if(foundedBomb.entity.type == blaster){
+            this.useBlaster(secondSlot,foundedBomb);
+        }
+        else if (foundedBomb.entity.type == bomb){
+            useBomb(foundedBomb,countExplosionSurface(foundedBomb,true))
+        }
+        else{
+            useBomb(foundedBomb,countExplosionSurface(foundedBomb))
+        }
+    }
+
+    return true
+}
+
+function disselectAll(){
+    firstSelected = false;
+    secondSelected = false;
+    map.refreshMap();
+}
+
+function focusSelected(){
+    if(firstSelected){
+        ctx.clearRect(firstSelected.realX,firstSelected.realY,30,30);
+        let img = firstSelected.entity.type;
+        ctx.drawImage(img,firstSelected.realX,firstSelected.realY);
+    }
+    if(secondSelected){
+        ctx.clearRect(secondSelected.realX,secondSelected.realY,30,30);
+        let img = secondSelected.entity.type;
+        ctx.drawImage(img,secondSelected.realX,secondSelected.realY);
+    }
+}
+
+function dropAllEntities(){
+    for(let slot of map.allSlots){
+        if(slot.brotherBottom){
+            if(!slot.brotherBottom.entity){
+                let dropedEntity = slot.dropEntity();
+                if(dropedEntity){
+                    fallingEntities.push(dropedEntity);
                 }
-                else if(totalPoints == 4 && resultTop.points != 1){
+            }
+        }
+    }
+}
+
+function lookForConnections(){
+    let found = false;
+    let toDestroy = [];
+    let blasters = [];
+    let bigBombs = [];
+    let smallBombs = [];
+    
+    for(let slot of map.allSlots){
+        if(slot.entity != false){
+            let resultTop = slot.checkBrothers("brotherTop",slot.entity.type);
+            let resultBottom = slot.checkBrothers("brotherBottom",slot.entity.type);
+            let resultLeft = slot.checkBrothers("brotherLeft",slot.entity.type);
+            let resultRight = slot.checkBrothers("brotherRight",slot.entity.type);
+            let totalPoints = resultTop.points + resultBottom.points + resultLeft.points + resultRight.points;
+            if(totalPoints == 6){
+                blasters.push({
+                    slot:slot,
+                    toDestroy:resultTop.slots.concat(resultBottom.slots,resultLeft.slots,resultRight.slots)
+                });       
+                found = true;
+            }
+            else if(totalPoints == 4 && resultTop.points != 1){
+                bigBombs.push({
+                    slot:slot,
+                    toDestroy:resultTop.slots.concat(resultBottom.slots,resultLeft.slots,resultRight.slots)
+                });
+                found = true;
+            }
+            else if(totalPoints >= 2){
+                if(resultTop.points + resultBottom.points == 4){
+                    found = true;
                     bigBombs.push({
                         slot:slot,
-                        toDestroy:resultTop.slots.concat(resultBottom.slots,resultLeft.slots,resultRight.slots)
+                        toDestroy:resultTop.slots.concat(resultBottom.slots)
                     });
+                }
+                else if(resultLeft.points + resultRight.points == 4){
                     found = true;
+                    bigBombs.push({
+                        slot:slot,
+                        toDestroy:resultLeft.slots.concat(resultRight.slots)
+                    });
                 }
-                else if(totalPoints >= 2){
-                    if(resultTop.points + resultBottom.points == 4){
-                        found = true;
-                        bigBombs.push({
-                            slot:slot,
-                            toDestroy:resultTop.slots.concat(resultBottom.slots)
-                        });
-                    }
-                    else if(resultLeft.points + resultRight.points == 4){
-                        found = true;
-                        bigBombs.push({
-                            slot:slot,
-                            toDestroy:resultLeft.slots.concat(resultRight.slots)
-                        });
-                    }
-                    else if(resultTop.points + resultBottom.points == 3){
-                        found = true;
-                        smallBombs.push({
-                            slot:slot,
-                            toDestroy:resultTop.slots.concat(resultBottom.slots)
-                        });
-                    }
-                    else if(resultLeft.points + resultRight.points == 3){
-                        found = true;
-                        smallBombs.push({
-                            slot:slot,
-                            toDestroy:resultLeft.slots.concat(resultRight.slots)
-                        });
-                    }
-                    else if(resultLeft.points + resultRight.points == 2){
-                        found = true;
-                        toDestroy.push(slot,resultLeft.slots,resultRight.slots);
-                    }
-                    else if(resultTop.points + resultBottom.points == 2){
-                        found = true;
-                        toDestroy.push(slot,resultTop.slots,resultBottom.slots);
-                    }
+                else if(resultTop.points + resultBottom.points == 3){
+                    found = true;
+                    smallBombs.push({
+                        slot:slot,
+                        toDestroy:resultTop.slots.concat(resultBottom.slots)
+                    });
+                }
+                else if(resultLeft.points + resultRight.points == 3){
+                    found = true;
+                    smallBombs.push({
+                        slot:slot,
+                        toDestroy:resultLeft.slots.concat(resultRight.slots)
+                    });
+                }
+                else if(resultLeft.points + resultRight.points == 2){
+                    found = true;
+                    toDestroy.push(slot,resultLeft.slots,resultRight.slots);
+                }
+                else if(resultTop.points + resultBottom.points == 2){
+                    found = true;
+                    toDestroy.push(slot,resultTop.slots,resultBottom.slots);
                 }
             }
         }
-        if(found){
-            this.makeBombs(blasters,bigBombs,smallBombs,toDestroy);
-        }
-        return found
     }
-
-    this.makeBombs = function(blasters,bigBombs,smallBombs,toDestroy){
-        for(let data of blasters){
-            data.slot.entity.type = blaster;
-            this.clearSlots(data.toDestroy)
-        }
-        for(let data of bigBombs){
-            if(data.slot.entity != false){
-                data.slot.entity.type = bomb;
-                this.clearSlots(data.toDestroy)
-            }
-        }
-        for(let data of smallBombs){
-            if(data.slot.entity != false){
-                data.slot.entity.type = smallbomb;
-                this.clearSlots(data.toDestroy)
-            }
-        }
-        for(let toclear of toDestroy){
-            if(toclear.entity){
-                let type = toclear.entity.type;
-                if(type != blaster && type != bomb && type != smallbomb){
-                    toclear.entity = false;
-                }
-            }
-        }
-        game.dropAllEntities();
+    if(found){
+        makeBombs(blasters,bigBombs,smallBombs,toDestroy);
     }
-
-    this.clearSlots = function(slots){
-        for(let slot of slots){
-                slot.entity = false; 
-        }
-    }
-
-    this.gameLoop = function(){
-        if(this.fallingEntities.length > 0){
-            map.clearMap();
-            this.liveEntites();
-            map.renderMap();
-        } else{
-            this.addEntities();
-        }
-        
-        if(!this.paused) setTimeout(this.gameLoop.bind(this));
-    }
-
-
-    canvas.addEventListener("mousedown",this.selectSlot.bind(this))
-    document.getElementById("start-game-button").addEventListener("click",this.startGame.bind(this))
-    document.getElementById("pause-game-button").addEventListener("click",()=>{this.paused = true})
+    return found
 }
+
+function makeBombs(blasters,bigBombs,smallBombs,toDestroy){
+    for(let data of blasters){
+        data.slot.entity.type = blaster;
+        clearSlots(data.toDestroy)
+    }
+    for(let data of bigBombs){
+        if(data.slot.entity != false){
+            data.slot.entity.type = bomb;
+            clearSlots(data.toDestroy)
+        }
+    }
+    for(let data of smallBombs){
+        if(data.slot.entity != false){
+            data.slot.entity.type = smallbomb;
+            clearSlots(data.toDestroy)
+        }
+    }
+    for(let toclear of toDestroy){
+        if(toclear.entity){
+            let type = toclear.entity.type;
+            if(type != blaster && type != bomb && type != smallbomb){
+                toclear.entity = false;
+            }
+        }
+    }
+    dropAllEntities();
+}
+
+function clearSlots(slots){
+    for(let slot of slots){
+        slot.entity = false; 
+}
+}
+
+function gameLoop(){
+    if(fallingEntities.length > 0){
+        map.clearMap();
+        liveEntites();
+        map.renderMap();
+    } else{
+        addEntities();
+    }
+    
+    if(!gamePaused) setTimeout(gameLoop.bind(this));
+}
+
+
+
+canvas.addEventListener("mousedown",selectSlot)
+document.getElementById("start-game-button").addEventListener("click",startGame)
+document.getElementById("pause-game-button").addEventListener("click",()=>{gamePaused = true})
+
+
+
+
+
 
 
 //and menu functions:
@@ -590,23 +600,10 @@ let menuPagesMenager = {
         }
     }
 }
+
 menuPagesMenager.firstLoad();
-// End of Functions
-const canvas = document.getElementById("game-scene");
-const slotSize = 32;
-const blaster = document.getElementById("game-entity-blaster")
-const bomb = document.getElementById("game-entity-bomb");
-const smallbomb = document.getElementById("game-entity-smallbomb");
-const bombs = [blaster,bomb,smallbomb];
-let ctx = canvas.getContext("2d");
-let fruits = [];
-let map = new Map();
-let game = new Game();
-ctx.lineWidth = 2;
-countMapSurface();
-
-for(let img of document.getElementsByName("game-entity")){
-    fruits.push(img)
-}
-
 window.onload = menuPagesMenager.showPage("main-page");
+
+
+
+
