@@ -96,25 +96,18 @@ function Entity(startX,startY=0){
             this.y += 1.2;
             this.parent = map.returnSlotByPosition(this.x,this.y)
 
-            if(!this.parent.brotherBottom){ // If on the end
-                this.grounted = true;
-            } 
-            else if (this.parent.brotherBottom.entity){ // if other entity below
-                this.grounted = true;
-            }
+            if(!this.parent.brotherBottom){ this.grounted = true; } 
+            else if (this.parent.brotherBottom.entity){ this.grounted = true; }
 
             if(this.grounted){
                 this.y = this.parent.realY;
                 this.parent.entity = this;
             }
+
             let img = this.type;
             ctx.drawImage(img,this.x,this.y);
         }
     }
-
-    
-
-
 }
 
 
@@ -227,18 +220,16 @@ function addEntities(){
 
 
 function liveEntites(){
-    let landed = false;
-    for(let i = 0; i < fallingEntities.length; i++){
-        let entity = fallingEntities[i];
+    let landed = true;
+    fallingEntities.forEach(entity=>{
         entity.fall()
-        if(entity.grounted){
-            fallingEntities.splice(i,1);
-            landed = true
+        if(!entity.grounted){
+            landed = false
         }
-    }
+    })
     if(landed == true){
+        fallingEntities = [];
         lookForConnections();
-        dropAllEntities();
     }
 }
 
@@ -436,14 +427,14 @@ function dropAllEntities(){
     }
 }
 
-function lookForConnections(){
+function lookForConnections(slots = map.allSlots){
     let found = false;
     let toDestroy = [];
     let blasters = [];
     let bigBombs = [];
     let smallBombs = [];
     
-    for(let slot of map.allSlots){
+    for(let slot of slots){
         if(slot.entity != false){
             let resultTop = slot.checkBrothers("brotherTop",slot.entity.type);
             let resultBottom = slot.checkBrothers("brotherBottom",slot.entity.type);
@@ -546,13 +537,10 @@ function clearSlots(slots){
 
 function gameLoop(){
     if(fallingEntities.length > 0){
-        map.clearMap();
         liveEntites();
-        map.renderMap();
     } else{
         addEntities();
     }
-    
     if(!gamePaused) setTimeout(gameLoop.bind(this));
 }
 
@@ -561,8 +549,6 @@ function gameLoop(){
 canvas.addEventListener("mousedown",selectSlot)
 document.getElementById("start-game-button").addEventListener("click",startGame)
 document.getElementById("pause-game-button").addEventListener("click",()=>{gamePaused = true})
-
-
 
 
 
@@ -603,6 +589,9 @@ let menuPagesMenager = {
 
 menuPagesMenager.firstLoad();
 window.onload = menuPagesMenager.showPage("main-page");
+
+
+
 
 
 
