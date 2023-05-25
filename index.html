@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="ruinsColector.css">
+    <script src="game2.js" defer></script>
+</head>
+<style>
+    #somethink {
+        color: red;
+    }
+</style>
+
+<body>
+    <div id="game-container">
+        <div id="game-window">
+            <div class="game-menu-page" name="hiden-page">
+                <img src="enti/p1.png" alt="" name="game-entity">
+                <img src="enti/p2.png" alt="" name="game-entity">
+                <img src="enti/p3.png" alt="" name="game-entity">
+                <img src="enti/p4.png" alt="" name="game-entity">
+                <img src="enti/p5.png" alt="" name="game-entity">
+                <img src="enti/p6.png" alt="" name="game-entity">
+                <img src="enti/p7.png" alt="" name="game-entity">
+                <img src="enti/p8.png" alt="" name="game-entityy">
+                <img src="enti/bomb.png" alt="" id="game-entity-bomb">
+                <img src="enti/smallbomb.png" alt="" id="game-entity-smallbomb">
+                <img src="enti/blaster.png" alt="" id="game-entity-blaster">
+            </div>
+
+            <div class="game-menu-page game-menu-page-active" name="game-load-page">
+                <span class="game-menu-page-bigTitle">Game Loading</span>
+                <progress id="game-load-progress" min="0" value="0" max="100"></progress>
+            </div>
+
+            <canvas id="game-scene">
+
+            </canvas>
+
+            <div class="game-menu-page" name="main-page">
+                <span class="game-menu-page-bigTitle">Vegetables Smasher</span>
+                <button type="button" class="show-menu-page-button" value="ingame-page" id="start-game-button">New Game</button>
+                <button type="button" class="show-menu-page-button" value="howplay-page">How to play ?</button>
+                <button type="button" class="show-menu-page-button" value="author-page">About author</button>
+                <button type="button" id="exit-game-button">Quit</button>
+            </div>
+
+            <div class="game-menu-page" name="howplay-page">
+                <span class="game-menu-page-bigTitle">How to play ?</span>
+                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolor incidunt, distinctio, repudiandae ex
+                    voluptatem quibusdam explicabo nisi iure et nihil, corrupti atque qui autem sequi in possimus quo
+                    optio inventore.</p>
+                <button type="button" class="show-menu-page-button" value="main-page">Return</button>
+            </div>
+
+            <div class="game-menu-page" name="author-page">
+                <span class="game-menu-page-bigTitle">About author</span>
+                <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Id, iusto! Fugit delectus voluptas
+                    nesciunt, inventore autem voluptates exercitationem, ipsum magni reiciendis nihil id quod, minima
+                    veniam assumenda quo provident velit.</p>
+                <button type="button" class="show-menu-page-button" value="main-page">Return</button>
+            </div>
+
+            <div class="game-menu-page" name="ingame-page" id="game-topbar">
+                <span>moves:30</span>
+                <button type="button" class="show-menu-page-button" value="pause-page" id="pause-game-button">Pause</button>
+            </div>    
+
+            <div class="game-menu-page" name="pause-page">
+                <span>Game paused</span>
+                <button type="button" class="show-menu-page-button" value="main-page">Back to menu</button>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+
+</html>
