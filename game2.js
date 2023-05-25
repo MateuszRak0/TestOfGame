@@ -3,6 +3,7 @@ let fallingEntities = [];
 let firstSelected;
 let secondSelected;
 // End of Functions
+let entitiesCount = 0;
 const canvas = document.getElementById("game-scene");
 const slotSize = 32;
 const blaster = document.getElementById("game-entity-blaster")
@@ -119,6 +120,7 @@ function Map(){
     let surface = countMapSurface();
     this.width = surface.x;
     this.height = surface.y;
+    this.surface = this.width * this.height;
 
     this.init = function(){
         Slot.prototype.parent = this;
@@ -150,6 +152,7 @@ function Map(){
     }
 
     this.renderMap = function(){
+        console.log("RENDERUJE")
         ctx.strokeStyle = "#000";
         for(let slot of this.allSlots){
 
@@ -165,12 +168,13 @@ function Map(){
     }
 
     this.fillSlots = function(){
+        entitiesCount = 0;
         this.allSlots.forEach(slot => {
             slot.entity = new Entity();
             slot.grabEntity();
+            entitiesCount ++;
         });
     }
-    
 
     this.returnSlotByPosition = function(realX,realY){
         let address = `${Math.floor(realX/slotSize)}:${Math.floor(realY/slotSize)}`;
@@ -523,6 +527,7 @@ function makeBombs(blasters,bigBombs,smallBombs,toDestroy){
             let type = toclear.entity.type;
             if(type != blaster && type != bomb && type != smallbomb){
                 toclear.entity = false;
+                entitiesCount --;
             }
         }
     }
@@ -531,15 +536,26 @@ function makeBombs(blasters,bigBombs,smallBombs,toDestroy){
 
 function clearSlots(slots){
     for(let slot of slots){
-        slot.entity = false; 
+        if(slot.entity){
+            slot.entity = false; 
+            entitiesCount --;
+        }
+
 }
 }
 
 function gameLoop(){
     if(fallingEntities.length > 0){
+        map.clearMap();
         liveEntites();
-    } else{
+        map.renderMap();
+    } 
+    else if(entitiesCount != map.surface){
+        dropAllEntities();
         addEntities();
+    }
+    else{
+        
     }
     if(!gamePaused) setTimeout(gameLoop.bind(this));
 }
