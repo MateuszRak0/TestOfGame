@@ -145,14 +145,10 @@ function Map(){
         }
     }
 
-    this.refreshMap = function(){
-        this.clearMap();
-        this.renderMap();
-    }
-
-    this.clearMap = function(bychunks){
+    this.clearMap = function(){
         ctx.clearRect(0,0,canvas.width,canvas.height);
     }
+    
 
     this.renderMap = function(slots = this.allSlots){
         for(let slot of slots){
@@ -261,7 +257,8 @@ function moveEntities(secondTime = false){
     secondSelected.entity = buffor;
     firstSelected.grabEntity();
     secondSelected.grabEntity();
-    map.refreshMap();
+    renderSlot(firstSelected);
+    renderSlot(secondSelected);
     if(!lookForBombs(firstSelected,secondSelected)){
 
         if(lookForConnections() == false && secondTime == false){
@@ -397,9 +394,10 @@ function lookForBombs(slot1,slot2){
 }
 
 function disselectAll(){
+    renderSlot(firstSelected);
+    renderSlot(secondSelected);
     firstSelected = false;
     secondSelected = false;
-    map.refreshMap();
 }
 
 function focusSelected(){
@@ -503,6 +501,17 @@ function lookForConnections(){
     }
     return found
 }
+
+function renderSlot(slot){
+    ctx.clearRect(slot.realX,slot.realY,slotSize,slotSize);
+    if(slot.entity){
+        let img = slot.entity.type;
+        ctx.drawImage(img,slot.realX+2,slot.realY+2,28,28);
+    }
+
+}
+
+
 
 function makeBombs(blasters,bigBombs,smallBombs,toDestroy){
     for(let data of blasters){
