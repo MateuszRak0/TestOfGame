@@ -86,7 +86,7 @@ function Slot(x,y){
 function Entity(startX,startY=0){
     this.y = startY;
     this.x = startX;
-    this.type = fruits[Math.floor(Math.random() * (fruits.length))];
+    this.type = fruits[Math.floor(Math.random() * (fruits.length - 2 ))];
     this.specialAbilities = false;
     this.grounted = false;
     this.parent;
@@ -180,8 +180,10 @@ function Map(){
 // Functions to games
 
 function startGame(){
+    map.clearMap();
     gamePaused = false;
     map.fillSlots();
+    map.allSlots[20].entity.type = blaster;
     map.renderMap();
     lookForConnections();
     setTimeout(gameLoop,100)
@@ -232,7 +234,7 @@ function liveEntites(){
 
 
 function selectSlot(event){
-    if(fallingEntities.length == 0){
+    if(gamePaused == false){
         let selectedSlot = map.returnSlotByPosition(event.offsetX,event.offsetY);
         if(selectedSlot){
             if(!firstSelected && selectedSlot.entity){
@@ -252,22 +254,25 @@ function selectSlot(event){
 
 
 function moveEntities(secondTime = false){
-    let buffor = firstSelected.entity;
-    firstSelected.entity = secondSelected.entity;
-    secondSelected.entity = buffor;
-    firstSelected.grabEntity();
-    secondSelected.grabEntity();
-    renderSlot(firstSelected);
-    renderSlot(secondSelected);
-    if(!lookForBombs(firstSelected,secondSelected)){
-
-        if(lookForConnections() == false && secondTime == false){
-            setTimeout(()=>{moveEntities(true)},500);
+    if(firstSelected && secondSelected){
+        let buffor = firstSelected.entity;
+        firstSelected.entity = secondSelected.entity;
+        secondSelected.entity = buffor;
+        firstSelected.grabEntity();
+        secondSelected.grabEntity();
+        renderSlot(firstSelected);
+        renderSlot(secondSelected);
+        if(!lookForBombs(firstSelected,secondSelected)){
+    
+            if(lookForConnections() == false && secondTime == false){
+                setTimeout(()=>{moveEntities(true)},500);
+            }
+            else{
+                disselectAll();
+            } 
         }
-        else{
-            disselectAll();
-        } 
     }
+
 }
 
 
@@ -291,8 +296,11 @@ function useBlaster(startSlot,blasterslot){
     }
     ctx.stroke();
     setTimeout((toremove)=>{
-        this.clearSlots(toremove);
+        clearSlots(toremove);
+        map.clearMap();
+        map.renderMap();
         dropAllEntities();
+        
     },500,toremove)
 }
 
@@ -402,12 +410,12 @@ function disselectAll(){
 
 function focusSelected(){
     if(firstSelected){
-        ctx.clearRect(firstSelected.realX,firstSelected.realY,30,30);
+        ctx.clearRect(firstSelected.realX,firstSelected.realY,slotSize,slotSize);
         let img = firstSelected.entity.type;
         ctx.drawImage(img,firstSelected.realX,firstSelected.realY);
     }
     if(secondSelected){
-        ctx.clearRect(secondSelected.realX,secondSelected.realY,30,30);
+        ctx.clearRect(secondSelected.realX,secondSelected.realY,slotSize,slotSize);
         let img = secondSelected.entity.type;
         ctx.drawImage(img,secondSelected.realX,secondSelected.realY);
     }
@@ -503,11 +511,14 @@ function lookForConnections(){
 }
 
 function renderSlot(slot){
-    ctx.clearRect(slot.realX,slot.realY,slotSize,slotSize);
-    if(slot.entity){
-        let img = slot.entity.type;
-        ctx.drawImage(img,slot.realX+2,slot.realY+2,28,28);
+    if(slot){
+        ctx.clearRect(slot.realX,slot.realY,slotSize,slotSize);
+        if(slot.entity){
+            let img = slot.entity.type;
+            ctx.drawImage(img,slot.realX+2,slot.realY+2,28,28);
+        }
     }
+
 
 }
 
@@ -516,18 +527,21 @@ function renderSlot(slot){
 function makeBombs(blasters,bigBombs,smallBombs,toDestroy){
     for(let data of blasters){
         data.slot.entity.type = blaster;
-        clearSlots(data.toDestroy)
+        renderSlot(data.slot);
+        clearSlots(data.toDestroy);
     }
     for(let data of bigBombs){
         if(data.slot.entity != false){
             data.slot.entity.type = bomb;
-            clearSlots(data.toDestroy)
+            renderSlot(data.slot);
+            clearSlots(data.toDestroy);
         }
     }
     for(let data of smallBombs){
         if(data.slot.entity != false){
             data.slot.entity.type = smallbomb;
-            clearSlots(data.toDestroy)
+            renderSlot(data.slot);
+            clearSlots(data.toDestroy);
         }
     }
     for(let toclear of toDestroy){
@@ -535,7 +549,7 @@ function makeBombs(blasters,bigBombs,smallBombs,toDestroy){
             let type = toclear.entity.type;
             if(type != blaster && type != bomb && type != smallbomb){
                 toclear.entity = false;
-                ctx.clearRect(toclear.realX,toclear.realY,slotSize,slotSize);
+                renderSlot(toclear);
             }
         }
     }
@@ -602,8 +616,10 @@ window.onload = menuPagesMenager.showPage("main-page");
 canvas.addEventListener("mousedown",selectSlot)
 document.getElementById("start-game-button").addEventListener("click",startGame)
 document.getElementById("pause-game-button").addEventListener("click",()=>{gamePaused = true})
-
-
+document.getElementById("resume-game-button").addEventListener("click",()=>{
+    gamePaused = false;
+    gameLoop();
+})
 
 
 
