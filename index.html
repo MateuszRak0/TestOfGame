@@ -5,16 +5,10 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>CookieSmasher</title>
     <link rel="stylesheet" href="ruinsColector.css">
     <script src="game2.js" defer></script>
 </head>
-<style>
-    #somethink {
-        color: red;
-    }
-</style>
-
 <body>
     <div id="game-container">
         <div id="game-window">
@@ -26,7 +20,7 @@
                 <img src="enti/p5.png" alt="" name="game-entity">
                 <img src="enti/p6.png" alt="" name="game-entity">
                 <img src="enti/p7.png" alt="" name="game-entity">
-                <img src="enti/p8.png" alt="" name="game-entityy">
+                <img src="enti/p8.png" alt="" name="game-entity">
                 <img src="enti/bomb.png" alt="" id="game-entity-bomb">
                 <img src="enti/smallbomb.png" alt="" id="game-entity-smallbomb">
                 <img src="enti/blaster.png" alt="" id="game-entity-blaster">
@@ -42,11 +36,11 @@
             </canvas>
 
             <div class="game-menu-page" name="main-page">
-                <span class="game-menu-page-bigTitle">Vegetables Smasher</span>
+                <span class="game-menu-page-bigTitle">Cookie Smasher</span>
                 <button type="button" class="show-menu-page-button" value="ingame-page" id="start-game-button">New Game</button>
                 <button type="button" class="show-menu-page-button" value="howplay-page">How to play ?</button>
                 <button type="button" class="show-menu-page-button" value="author-page">About author</button>
-                <button type="button" id="exit-game-button">Quit</button>
+                <button type="button" class="show-menu-page-button" id="exit-game-button">Quit</button>
             </div>
 
             <div class="game-menu-page" name="howplay-page">
@@ -66,12 +60,45 @@
             </div>
 
             <div class="game-menu-page" name="ingame-page" id="game-topbar">
-                <span>moves:30</span>
-                <button type="button" class="show-menu-page-button" value="pause-page" id="pause-game-button">Pause</button>
+                <div>
+                    <p>Moves: 22</p>
+                    <p>Score: 0</p>
+                </div>
+                <div>
+                    <p>Goals:</p>
+                    <div>
+                        <img src="enti/p1.png" alt="" width="18px" height="18px">
+                        <p>0/10</p>
+                    </div>
+                    <div>
+                        <img src="enti/p2.png" alt="" width="18px" height="18px">
+                        <p>0/10</p>
+                    </div>
+
+                    <div>
+                        <img src="enti/p3.png" alt="" width="18px" height="18px">
+                        <p>0/10</p>
+                    </div>
+                    <div>
+                        <img src="enti/p4.png" alt="" width="18px" height="18px">
+                        <p>0/10</p>
+                    </div>
+                    <div>
+                        <img src="enti/p5.png" alt="" width="18px" height="18px">
+                        <p>0/10</p>
+                    </div>
+                    <div>
+                        <img src="enti/p6.png" alt="" width="18px" height="18px">
+                        <p>0/10</p>
+                    </div>
+                    
+                </div>
+                <button type="button" class="show-menu-page-button" value="pause-page" id="pause-game-button">&#128682</button>
             </div>    
 
             <div class="game-menu-page" name="pause-page">
-                <span>Game paused</span>
+                <span class="game-menu-page-bigTitle">Game paused</span>
+                <button type="button" class="show-menu-page-button" value="ingame-page" id="resume-game-button">Resume Game</button>
                 <button type="button" class="show-menu-page-button" value="main-page">Back to menu</button>
             </div>
 
