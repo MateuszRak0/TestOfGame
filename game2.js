@@ -1,8 +1,10 @@
 let gamePaused = false;
 let fallingEntities = [];
 let movingEntities = false;
+let explosionAnimation = false;
 let firstSelected;
 let secondSelected;
+
 const canvas = document.getElementById("game-scene");
 const slotSize = 36;
 const blaster = document.getElementById("game-entity-blaster")
@@ -10,11 +12,20 @@ const bomb = document.getElementById("game-entity-bomb");
 const smallbomb = document.getElementById("game-entity-smallbomb");
 const bombs = [blaster,bomb,smallbomb];
 let ctx = canvas.getContext("2d");
-ctx.fillStyle = "green";
 let fruits = [];
+let explosionAnimationFrames = [];
+
+
+
+
 for(let img of document.getElementsByName("game-entity")){
     fruits.push(img)
 }
+for(let img of document.getElementsByName("game-effect-bomb")){
+    explosionAnimationFrames.push(img);
+}
+
+
 let map = new Map();
 
 
@@ -188,7 +199,9 @@ function startGame(){
     map.clearMap();
     gamePaused = false;
     map.fillSlots();
-    map.allSlots[20].entity.type = blaster;
+    map.allSlots[20].entity.type = bomb;
+    map.allSlots[25].entity.type = bomb;
+    map.allSlots[15].entity.type = bomb;
     map.renderMap();
     lookForConnections();
     setTimeout(gameLoop,100)
@@ -274,6 +287,8 @@ function startEntityMovment(firstTime = true){
 }
 
 
+
+
 function animateEntityMovment(){
         let animation = movingEntities;
         if(animation.steps > 0){
@@ -356,6 +371,7 @@ function useBlaster(startSlot,blasterslot){
 }
 
 function countExplosionSurface(startSlot,power=false){
+    startExplosionAnimation(startSlot)
     result = {
         toDestroy:[startSlot],
         small:[],
@@ -625,11 +641,43 @@ function gameLoop(){
         addEntities();
     }
     animateEntityMovment();
+    animateExplosions();
+
     if(!gamePaused) setTimeout(gameLoop.bind(this));
 }
 
 
+function startExplosionAnimation(slot,){
+    let margin = (slotSize*5)/4;
+    let startX = slot.realX - margin;
+    let startY = slot.realY - margin
+    explosionAnimation = {
+        x:startX,
+        y:startY,
+        size:(slotSize*5)-margin,
+        step:0,
+    }
+}
 
+
+function animateExplosions(){
+    if(explosionAnimation){
+        explosionAnimation.step ++;
+        if(explosionAnimation.step < 75){
+            let img = explosionAnimationFrames[explosionAnimation.step];
+            if(explosionAnimation.step > 70){
+                ctx.clearRect(explosionAnimation.x,explosionAnimation.y,explosionAnimation.size,explosionAnimation.size);
+            }
+            
+            ctx.drawImage(img,explosionAnimation.x,explosionAnimation.y,explosionAnimation.size,explosionAnimation.size);
+        }
+        else{ 
+            explosionAnimation = false; 
+            map.clearMap();
+            map.renderMap();
+        }
+    }
+}
 
 
 
