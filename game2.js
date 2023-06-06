@@ -1,9 +1,10 @@
 let gamePaused = false;
 let fallingEntities = [];
+let movingEntities = false;
 let firstSelected;
 let secondSelected;
 const canvas = document.getElementById("game-scene");
-const slotSize = 32;
+const slotSize = 36;
 const blaster = document.getElementById("game-entity-blaster")
 const bomb = document.getElementById("game-entity-bomb");
 const smallbomb = document.getElementById("game-entity-smallbomb");
@@ -94,8 +95,8 @@ function Entity(startX,startY=0){
     
     this.fall = function(){
         if(!this.grounted){
-            ctx.clearRect(this.x,this.y,slotSize,slotSize)
-            this.y += 1.2;
+            
+            this.y += 2;
             this.parent = map.returnSlotByPosition(this.x,this.y)
 
             if(!this.parent.brotherBottom){ this.grounted = true; } 
@@ -105,9 +106,14 @@ function Entity(startX,startY=0){
                 this.y = this.parent.realY;
                 this.parent.entity = this;
             }
-            let img = this.type;
-            ctx.drawImage(img,this.x+2,this.y+2,28,28);
+            this.render();
         }
+    }
+
+    this.render = function(){
+        let img = this.type;
+        ctx.clearRect(this.x,this.y,slotSize,slotSize);
+        ctx.drawImage(img,this.x+2,this.y+2,slotSize-4,slotSize-4);
     }
 
     
@@ -154,8 +160,7 @@ function Map(){
         for(let slot of slots){
 
                 if(slot.entity){
-                    let img = slot.entity.type;
-                    ctx.drawImage(img,slot.realX+2,slot.realY+2,28,28);
+                    slot.entity.render();
                 }
         }
     }
@@ -242,7 +247,11 @@ function selectSlot(event){
             }
             else if(firstSelected && selectedSlot.entity && firstSelected.brothers.includes(selectedSlot)){
                 secondSelected = selectedSlot
-                moveEntities();
+                startEntityMovment();
+            }
+            else if (firstSelected == selectedSlot){
+                lookForBombs(firstSelected,selectedSlot);
+                disselectAll();
             }
             else{
                 disselectAll();
@@ -252,29 +261,71 @@ function selectSlot(event){
     }
 }
 
-
-function moveEntities(secondTime = false){
-    if(firstSelected && secondSelected){
-        let buffor = firstSelected.entity;
-        firstSelected.entity = secondSelected.entity;
-        secondSelected.entity = buffor;
-        firstSelected.grabEntity();
-        secondSelected.grabEntity();
-        renderSlot(firstSelected);
-        renderSlot(secondSelected);
-        if(!lookForBombs(firstSelected,secondSelected)){
-    
-            if(lookForConnections() == false && secondTime == false){
-                setTimeout(()=>{moveEntities(true)},500);
-            }
-            else{
-                disselectAll();
-            } 
-        }
+function startEntityMovment(firstTime = true){
+    let mover = {
+        firstSlot:firstSelected,
+        secondSlot:secondSelected,
+        moveX: firstSelected.x - secondSelected.x,
+        moveY: firstSelected.y - secondSelected.y,
+        steps: slotSize,
+        firstTime:firstTime,
     }
-
+    movingEntities = mover;
 }
 
+
+function animateEntityMovment(){
+        let animation = movingEntities;
+        if(animation.steps > 0){
+            animation.steps -- ;
+            let enti1 =  animation.firstSlot.entity;
+            let enti2 = animation.secondSlot.entity;
+            enti1.x += animation.moveX * -1;
+            enti1.y += animation.moveY * -1;
+            enti2.x += animation.moveX;
+            enti2.y += animation.moveY;
+            enti1.render();
+            enti2.render();
+        } 
+        else if(animation.steps == 0){
+            animation.steps -- ;
+            replaceEntities(animation.firstSlot,animation.secondSlot)
+            if(animation.firstTime){
+                checker(animation.firstSlot,animation.secondSlot)
+            }
+            else{
+                movingEntities = false;
+                disselectAll();
+            }
+        }
+
+    }
+
+
+function checker(firstSlot,secondSlot){
+    if(!lookForBombs(firstSlot,secondSlot)){
+        if(lookForConnections() == false){
+            startEntityMovment(false);
+        }
+        else{
+            disselectAll();
+        }
+    }
+    else{
+        disselectAll();
+    }
+}
+
+
+function replaceEntities(firstSlot,secondSlot){
+        let buffor = firstSlot.entity;
+        firstSlot.entity = secondSlot.entity;
+        secondSlot.entity = buffor;
+        firstSlot.grabEntity();
+        secondSlot.grabEntity();
+        renderSlot(firstSlot);
+        renderSlot(secondSlot);
+}
 
 function useBlaster(startSlot,blasterslot){
     let toremove = [startSlot,blasterslot];
@@ -305,15 +356,12 @@ function useBlaster(startSlot,blasterslot){
 }
 
 function countExplosionSurface(startSlot,power=false){
-    ctx.fillStyle = "#ff000020";
-    ctx.fillRect(startSlot.realX,startSlot.realY,slotSize,slotSize)
     result = {
         toDestroy:[startSlot],
         small:[],
         normal:[],
         havebombs:false
     }
-
     for(let brother of startSlot.brothers){
         if(brother){
             result.toDestroy.push(brother);
@@ -332,6 +380,8 @@ function countExplosionSurface(startSlot,power=false){
 
 
 function useBomb(startSlot,result){
+    ctx.fillStyle = "#ff000020";
+    ctx.fillRect(startSlot.realX,startSlot.realY,slotSize,slotSize)
     let buffor = [startSlot];
     for(let slot of result.toDestroy){
         if(slot.entity && slot != startSlot){
@@ -374,7 +424,10 @@ function lookForBombs(slot1,slot2){
     let secondSlot = false;
     let foundedBomb = false;
 
-    if(bombs.includes(slot1.entity.type)){
+    if(slot1 == slot2 && slot1.entity.type == blaster){
+        useBomb(slot1,countExplosionSurface(slot1,true))
+    }
+    else if(bombs.includes(slot1.entity.type)){
         foundedBomb = slot1;
         secondSlot = slot2;
     }
@@ -412,12 +465,12 @@ function focusSelected(){
     if(firstSelected){
         ctx.clearRect(firstSelected.realX,firstSelected.realY,slotSize,slotSize);
         let img = firstSelected.entity.type;
-        ctx.drawImage(img,firstSelected.realX,firstSelected.realY);
+        ctx.drawImage(img,firstSelected.realX,firstSelected.realY,slotSize,slotSize);
     }
     if(secondSelected){
         ctx.clearRect(secondSelected.realX,secondSelected.realY,slotSize,slotSize);
         let img = secondSelected.entity.type;
-        ctx.drawImage(img,secondSelected.realX,secondSelected.realY);
+        ctx.drawImage(img,secondSelected.realX,secondSelected.realY,slotSize,slotSize);
     }
 }
 
@@ -515,13 +568,12 @@ function renderSlot(slot){
         ctx.clearRect(slot.realX,slot.realY,slotSize,slotSize);
         if(slot.entity){
             let img = slot.entity.type;
-            ctx.drawImage(img,slot.realX+2,slot.realY+2,28,28);
+            ctx.drawImage(img,slot.realX+2,slot.realY+2,slotSize-4,slotSize-4);
         }
     }
 
 
 }
-
 
 
 function makeBombs(blasters,bigBombs,smallBombs,toDestroy){
@@ -566,10 +618,13 @@ function clearSlots(slots){
 function gameLoop(){
     if(fallingEntities.length > 0){
         liveEntites();
-    } else{
+    } 
+        
+
+    else{
         addEntities();
     }
-    
+    animateEntityMovment();
     if(!gamePaused) setTimeout(gameLoop.bind(this));
 }
 
