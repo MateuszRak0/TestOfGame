@@ -24,6 +24,19 @@
                 <img src="enti/bomb.png" alt="" id="game-entity-bomb">
                 <img src="enti/smallbomb.png" alt="" id="game-entity-smallbomb">
                 <img src="enti/blaster.png" alt="" id="game-entity-blaster">
+                
+                <script>
+                    let page = document.getElementsByName("hiden-page")[0];
+                    let newContent = "";
+                    for(let i = 0; i < 75; i++){
+                        let num = i;
+                        if(i < 10) num = `0${i}`;
+                        let img = ` <img src="fx/Effect_PuffAndStars_1_0${num}.png" alt="" name="game-effect-bomb">`;
+                        newContent = newContent + img;
+                    }
+                    page.innerHTML = page.innerHTML + newContent;
+                </script>
+                
             </div>
 
             <div class="game-menu-page game-menu-page-active" name="game-load-page">
