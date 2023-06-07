@@ -668,10 +668,7 @@ function animateExplosions(){
 
 
 function gameLoop(){
-    if(explosionAnimations.length > 0){
-        animateExplosions();
-    }
-    else if(fallingEntities.length > 0){
+    if(fallingEntities.length > 0){
         liveEntites();
     } 
         
@@ -679,7 +676,7 @@ function gameLoop(){
         addEntities();
     }
     animateEntityMovment();
-    
+    animateExplosions();
 
     if(!gamePaused) setTimeout(gameLoop.bind(this));
 }
