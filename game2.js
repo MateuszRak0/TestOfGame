@@ -1,32 +1,31 @@
-let gamePaused = false;
-let fallingEntities = [];
-let movingEntities = false;
-let explosionAnimation = false;
-let firstSelected;
-let secondSelected;
-
 const canvas = document.getElementById("game-scene");
 const slotSize = 36;
 const blaster = document.getElementById("game-entity-blaster")
 const bomb = document.getElementById("game-entity-bomb");
 const smallbomb = document.getElementById("game-entity-smallbomb");
 const bombs = [blaster,bomb,smallbomb];
+
+let gamePaused = false;
+let fallingEntities = [];
+let explosionAnimations = [];
+let movingEntities = false;
+let firstSelected;
+let secondSelected;
 let ctx = canvas.getContext("2d");
 let fruits = [];
 let explosionAnimationFrames = [];
-
-
-
+let map = new Map();
 
 for(let img of document.getElementsByName("game-entity")){
     fruits.push(img)
 }
+
 for(let img of document.getElementsByName("game-effect-bomb")){
     explosionAnimationFrames.push(img);
 }
 
 
-let map = new Map();
+
 
 
 function Slot(x,y){
@@ -287,8 +286,6 @@ function startEntityMovment(firstTime = true){
 }
 
 
-
-
 function animateEntityMovment(){
         let animation = movingEntities;
         if(animation.steps > 0){
@@ -371,7 +368,7 @@ function useBlaster(startSlot,blasterslot){
 }
 
 function countExplosionSurface(startSlot,power=false){
-    startExplosionAnimation(startSlot)
+    startExplosionAnimation(startSlot,power)
     result = {
         toDestroy:[startSlot],
         small:[],
@@ -615,6 +612,7 @@ function makeBombs(blasters,bigBombs,smallBombs,toDestroy){
             if(type != blaster && type != bomb && type != smallbomb){
                 toclear.entity = false;
                 renderSlot(toclear);
+                startExplosionAnimation(toclear,1)
             }
         }
     }
@@ -643,31 +641,46 @@ function gameLoop(){
 }
 
 
-function startExplosionAnimation(slot,power=5){
-    let margin = (slotSize*power)/4;
+function startExplosionAnimation(slot,power=2){
+    if(power === true){
+        power = 4;
+    } else if(power === false){
+        power = 2
+    }
+    let margin = (slotSize*power)/2;
     let startX = slot.realX - margin;
     let startY = slot.realY - margin
-    explosionAnimation = {
+    let explosion = {
         x:startX,
         y:startY,
-        size:(slotSize*power)-margin,
+        size:(slotSize*power)+slotSize,
         margin:margin,
         step:0,
     }
+    explosionAnimations.push(explosion); 
 }
 
 
 function animateExplosions(){
-    if(explosionAnimation){
-        explosionAnimation.step ++;
-        if(explosionAnimation.step < 75){
-            let img = explosionAnimationFrames[explosionAnimation.step];
-            ctx.drawImage(img,explosionAnimation.x,explosionAnimation.y,explosionAnimation.size,explosionAnimation.size);
-        }
-        else{ 
-            explosionAnimation = false; 
+    if(explosionAnimations.length > 0){
+        let inProgress = false;
+        explosionAnimations.forEach(explosion =>{
+            if(explosion.step < 75){
+                inProgress = true;
+                let img = explosionAnimationFrames[explosion.step];
+                ctx.drawImage(img,explosion.x,explosion.y,explosion.size,explosion.size);
+            }
+            explosion.step++;
+        })
+        if(!inProgress){
+            explosionAnimations = [];
+            map.clearMap();
             map.renderMap();
         }
+
+
+
+
     }
 }
 
