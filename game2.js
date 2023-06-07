@@ -396,8 +396,6 @@ function countExplosionSurface(startSlot,power=false){
 
 
 function useBomb(startSlot,result){
-    ctx.fillStyle = "#ff000020";
-    ctx.fillRect(startSlot.realX,startSlot.realY,slotSize,slotSize)
     let buffor = [startSlot];
     for(let slot of result.toDestroy){
         if(slot.entity && slot != startSlot){
@@ -413,7 +411,6 @@ function useBomb(startSlot,result){
                 result.havebombs = true;
             }
         }
-        ctx.fillRect(slot.realX,slot.realY,slotSize,slotSize);
     }
     result.toDestroy = buffor;
 
@@ -636,7 +633,6 @@ function gameLoop(){
         liveEntites();
     } 
         
-
     else{
         addEntities();
     }
@@ -647,14 +643,15 @@ function gameLoop(){
 }
 
 
-function startExplosionAnimation(slot,){
-    let margin = (slotSize*5)/4;
+function startExplosionAnimation(slot,power=5){
+    let margin = (slotSize*power)/4;
     let startX = slot.realX - margin;
     let startY = slot.realY - margin
     explosionAnimation = {
         x:startX,
         y:startY,
-        size:(slotSize*5)-margin,
+        size:(slotSize*power)-margin,
+        margin:margin,
         step:0,
     }
 }
@@ -665,15 +662,10 @@ function animateExplosions(){
         explosionAnimation.step ++;
         if(explosionAnimation.step < 75){
             let img = explosionAnimationFrames[explosionAnimation.step];
-            if(explosionAnimation.step > 70){
-                ctx.clearRect(explosionAnimation.x,explosionAnimation.y,explosionAnimation.size,explosionAnimation.size);
-            }
-            
             ctx.drawImage(img,explosionAnimation.x,explosionAnimation.y,explosionAnimation.size,explosionAnimation.size);
         }
         else{ 
             explosionAnimation = false; 
-            map.clearMap();
             map.renderMap();
         }
     }
