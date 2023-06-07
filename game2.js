@@ -626,20 +626,6 @@ function clearSlots(slots){
 }
 }
 
-function gameLoop(){
-    if(fallingEntities.length > 0){
-        liveEntites();
-    } 
-        
-    else{
-        addEntities();
-    }
-    animateEntityMovment();
-    animateExplosions();
-
-    if(!gamePaused) setTimeout(gameLoop.bind(this));
-}
-
 
 function startExplosionAnimation(slot,power=2){
     if(power === true){
@@ -677,16 +663,24 @@ function animateExplosions(){
             map.clearMap();
             map.renderMap();
         }
-
-
-
-
     }
 }
 
 
+function gameLoop(){
+    if(fallingEntities.length > 0){
+        liveEntites();
+    } 
+        
+    else{
+        addEntities();
+    }
+    animateEntityMovment();
+    animateExplosions();
 
-//and menu functions:
+    if(!gamePaused) setTimeout(gameLoop.bind(this));
+}
+
 let menuPagesMenager = {
     pages:{},
     activPage:undefined,
