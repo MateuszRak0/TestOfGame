@@ -101,23 +101,31 @@
                 <img src="fx/Effect_PuffAndStars_1_072.png" alt="" name="game-effect-bomb">
                 <img src="fx/Effect_PuffAndStars_1_073.png" alt="" name="game-effect-bomb">
                 <img src="fx/Effect_PuffAndStars_1_074.png" alt="" name="game-effect-bomb">
-
-
-
             </div>
-            
+
             <div class="game-menu-page" name="select-level-page">
                 <span class="game-menu-page-bigTitle">Select Level</span>
                 <div>
-                <button type="button" class="select-level-button" value="1">1</button>
-                <button type="button" class="select-level-button" value="2">2</button>
-                <button type="button" class="select-level-button" value="3">3</button>
-                <button type="button" class="select-level-button" value="4">4</button>
+                <label class="select-level-button"><input type="radio"  name="select-level" value="0" checked><span>1</span></label>
+                <label class="select-level-button"><input type="radio" name="select-level" value="1" disabled><span>2</span></label>
+                <label class="select-level-button"><input type="radio" name="select-level" value="2" disabled><span>3</span></label>
+                <label class="select-level-button"><input type="radio" name="select-level" value="3" disabled><span>4</span></label>
+                <label class="select-level-button"><input type="radio"  name="select-level" value="4" disabled><span>5</span></label>
+                <label class="select-level-button"><input type="radio" name="select-level" value="5" disabled><span>6</span></label>
+                <label class="select-level-button"><input type="radio" name="select-level" value="6" disabled><span>7</span></label>
+                <label class="select-level-button"><input type="radio" name="select-level" value="7" disabled><span>8</span></label>
                 </div>
+                <button type="button" class="show-menu-page-button" value="ingame-page" id="start-game-button">Start Game</button>
             </div>
+
 
             <div class="game-menu-page game-menu-page-active" name="game-load-page">
                 <span class="game-menu-page-bigTitle">Game Loading</span>
+                <progress id="game-load-progress" min="0" value="0" max="100"></progress>
+            </div>
+
+            <div class="game-menu-page" name="mission-preview-page">
+                <span class="game-menu-page-bigTitle">Your  Mission</span>
                 <progress id="game-load-progress" min="0" value="0" max="100"></progress>
             </div>
 
@@ -127,7 +135,7 @@
 
             <div class="game-menu-page" name="main-page">
                 <span class="game-menu-page-bigTitle">Cookie Smasher</span>
-                <button type="button" class="show-menu-page-button" value="ingame-page" id="start-game-button">New Game</button>
+                <button type="button" class="show-menu-page-button" value="select-level-page">New Game</button>
                 <button type="button" class="show-menu-page-button" value="howplay-page">How to play ?</button>
                 <button type="button" class="show-menu-page-button" value="author-page">About author</button>
                 <button type="button" class="show-menu-page-button" id="exit-game-button">Quit</button>
@@ -143,52 +151,75 @@
 
             <div class="game-menu-page" name="author-page">
                 <span class="game-menu-page-bigTitle">About author</span>
-                <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Id, iusto! Fugit delectus voluptas
-                    nesciunt, inventore autem voluptates exercitationem, ipsum magni reiciendis nihil id quod, minima
-                    veniam assumenda quo provident velit.</p>
+                <p>Game created by Mateusz Rak. Visit my website at <a href="http://mrak.j.pl">mrak.j.pl</a></p>
+                
                 <button type="button" class="show-menu-page-button" value="main-page">Return</button>
             </div>
 
             <div class="game-menu-page" name="ingame-page" id="game-topbar">
                 <div>
-                    <p>Moves: 22</p>
-                    <p>Score: 0</p>
-                </div>
-                <div>
+                    <p id="display-moves">22</p>
                     <p>Goals:</p>
-                    <div>
-                        <img src="enti/p1.png" alt="" width="18px" height="18px">
-                        <p>0/10</p>
-                    </div>
-                    <div>
-                        <img src="enti/p2.png" alt="" width="18px" height="18px">
-                        <p>0/10</p>
+                </div>
+
+                <div id="goals-list">
+                    
+                    <div class="goal-box" name="enti-0">
+                        <img src="enti/p1.png" alt="">
+                        <progress min="0" value="0" max="100"></progress>
                     </div>
 
-                    <div>
-                        <img src="enti/p3.png" alt="" width="18px" height="18px">
-                        <p>0/10</p>
+                    <div class="goal-box" name="enti-1">
+                        <img src="enti/p2.png" alt="">
+                        <progress min="0" value="0" max="100"></progress>
                     </div>
-                    <div>
-                        <img src="enti/p4.png" alt="" width="18px" height="18px">
-                        <p>0/10</p>
+
+                    <div class="goal-box" name="enti-2">
+                        <img src="enti/p3.png" alt="">
+                        <progress min="0" value="0" max="100"></progress>
                     </div>
-                    <div>
-                        <img src="enti/p5.png" alt="" width="18px" height="18px">
-                        <p>0/10</p>
+
+                    <div class="goal-box" name="enti-3">
+                        <img src="enti/p4.png" alt="">
+                        <progress min="0" value="0" max="100"></progress>
                     </div>
-                    <div>
-                        <img src="enti/p6.png" alt="" width="18px" height="18px">
-                        <p>0/10</p>
+                    <div class="goal-box" name="enti-4">
+                        <img src="enti/p5.png" alt="">
+                        <progress min="0" value="0" max="100"></progress>
+                    </div>
+                    <div class="goal-box" name="enti-5">
+                        <img src="enti/p6.png" alt="">
+                        <progress min="0" value="0" max="100"></progress>
+                    </div>
+                    <div class="goal-box" name="enti-6">
+                        <img src="enti/p7.png" alt="">
+                        <progress min="0" value="0" max="100"></progress>
+                    </div>
+
+                    <div class="goal-box" name="enti-7">
+                        <img src="enti/p8.png" alt="">
+                        <progress min="0" value="0" max="100"></progress>
                     </div>
                     
                 </div>
-                <button type="button" class="show-menu-page-button" value="pause-page" id="pause-game-button">&#128682</button>
+                <button type="button" class="show-menu-page-button" value="pause-page" id="pause-game-button">PAUSE</button>
             </div>    
 
             <div class="game-menu-page" name="pause-page">
                 <span class="game-menu-page-bigTitle">Game paused</span>
                 <button type="button" class="show-menu-page-button" value="ingame-page" id="resume-game-button">Resume Game</button>
+                <button type="button" class="show-menu-page-button" value="main-page">Back to menu</button>
+            </div>
+
+            <div class="game-menu-page" name="game-over">
+                <span class="game-menu-page-bigTitle">Game Over</span>
+                <p>End of Moves!</p>
+                <button type="button" class="show-menu-page-button" value="main-page">Back to menu</button>
+            </div>
+
+            <div class="game-menu-page" name="winner-page">
+                <span class="game-menu-page-bigTitle">You Win !</span>
+                <p>All Goals clear!</p>
                 <button type="button" class="show-menu-page-button" value="main-page">Back to menu</button>
             </div>
 
