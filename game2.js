@@ -1,14 +1,17 @@
 const canvas = document.getElementById("game-scene");
-const slotSize = 36;
+const slotSize = 40;
 const blaster = document.getElementById("game-entity-blaster")
 const bomb = document.getElementById("game-entity-bomb");
 const smallbomb = document.getElementById("game-entity-smallbomb");
 const bombs = [blaster,bomb,smallbomb];
 
+let audio1 = new Audio('mixkit-arcade-game-explosion-2759.wav');
 let gamePaused = false;
+let movingPaused = true;
 let fallingEntities = [];
 let explosionAnimations = [];
 let movingEntities = false;
+let lastSelected = false;
 let firstSelected;
 let secondSelected;
 let ctx = canvas.getContext("2d");
@@ -16,16 +19,172 @@ let fruits = [];
 let explosionAnimationFrames = [];
 let map = new Map();
 
-for(let img of document.getElementsByName("game-entity")){
-    fruits.push(img)
+const scoreBoard = {
+    movesDisplay:document.getElementById("display-moves"),
+    goalBoxes:{},
+
+    init:function(){
+        for(let goalBox of document.getElementsByClassName("goal-box")){
+            let name = goalBox.getAttribute("name");
+            this.goalBoxes[name] = goalBox;
+        }
+    },
+
+    hideAllGoals:function(){
+        for(let name in this.goalBoxes){
+            this.hideSingleGoal(name);
+        }
+    },
+
+    hideSingleGoal:function(name){
+        let box = this.goalBoxes[name];
+        box.classList.remove("goal-box-active");
+        let progressBar = box.querySelector("progress");
+        progressBar.value = 0;
+    },
+
+    showGoalBoxes:function(goals){
+        for(let name in goals){
+            let maxValue = goals[name];
+            let box = this.goalBoxes[name];
+            let progressBar = box.querySelector("progress");
+            progressBar.max = maxValue;
+            box.classList.add("goal-box-active");
+        }
+    },
+
+    updatePoint:function(name){
+        let box = this.goalBoxes[name];
+        let progressBar = box.querySelector("progress");
+        progressBar.value++;
+        if(progressBar.value >= progressBar.max){
+            this.hideSingleGoal(name);
+            return true
+        }
+
+    }
 }
 
-for(let img of document.getElementsByName("game-effect-bomb")){
-    explosionAnimationFrames.push(img);
+let level = {
+    allLevels:[],
+    actual:0,
+    moves:0,
+    selected:false,
+    actualGoals:[],
+    levelsButtons:{},
+
+    createNew:function(moves,entities,specialFunctions,goals){
+        let newLevel = {
+            moves:moves,
+            entities:entities,
+            specialFunctions:specialFunctions,
+            goals:goals
+        }
+        this.allLevels.push(newLevel);
+    },
+
+    getData:function(param){
+        let selected = this.allLevels[this.actual];
+        return selected[param];
+    },
+
+    loadLevel:function(){
+        scoreBoard.hideAllGoals();
+        this.selected = this.allLevels[this.actual];
+        this.moves = this.selected.moves;
+        this.selected.specialFunctions();
+        scoreBoard.movesDisplay.innerHTML = this.moves;
+        this.loadGoals();
+    },
+
+    loadGoals:function(){
+        this.actualGoals = [];
+        for(let name in this.selected.goals){
+            this.actualGoals.push(name);
+        }
+        scoreBoard.showGoalBoxes(this.selected.goals);
+    },
+
+    afterMove:function(){
+        this.moves--;
+        scoreBoard.movesDisplay.innerHTML = this.moves;
+        if(this.moves < 0){
+            gamePaused = true;
+            scoreBoard.hideAllGoals();
+            menuPagesMenager.showPage("game-over");
+        }
+    },
+
+    givePoint:function(goalName){
+        if(this.actualGoals.includes(goalName)){
+            if(scoreBoard.updatePoint(goalName)){
+                let index = this.actualGoals.indexOf(goalName);
+                this.actualGoals.splice(index, 1);
+                if(this.actualGoals.length == 0){
+                    this.gameover();
+                }
+            }
+        }
+    },
+
+    gameover:function(){
+        let nextLevelButton = this.levelsButtons[this.actual+1];
+        if(nextLevelButton){
+            nextLevelButton.disabled = false;
+        }
+        gamePaused = true;
+        scoreBoard.hideAllGoals();
+        menuPagesMenager.showPage("winner-page");
+    }
 }
 
+let menuPagesMenager = {
+    pages:{},
+    activPage:undefined,
 
+    showPage:function(pageName){
+        let page = this.pages[pageName];
+        if(page){
+            this.activPage.classList.remove("game-menu-page-active");
+            this.activPage = page;
+            page.classList.add("game-menu-page-active");
+        }
+    },
 
+    firstLoad:function(){
+        scoreBoard.init();
+
+        for(let img of document.getElementsByName("game-entity")){
+            fruits.push(img)
+        }
+        
+        for(let img of document.getElementsByName("game-effect-bomb")){
+            explosionAnimationFrames.push(img);
+        }
+
+        for(let page of document.getElementsByClassName("game-menu-page")){
+            let pageName = page.getAttribute("name");
+            this.pages[pageName] = page;
+            if(pageName == "game-load-page"){
+                this.activPage = page;
+            }
+        }
+
+        for(let button of document.getElementsByClassName("show-menu-page-button")){
+            button.addEventListener("click",(e)=>{
+                let value = e.target.value;
+                this.showPage(value);
+            })
+        }
+
+        for(let button of document.getElementsByName("select-level")){
+            level.levelsButtons[button.value] = button;
+            button.addEventListener("click",(e)=>{
+                level.actual = e.target.value;
+            })
+        }
+    }
+}
 
 
 function Slot(x,y){
@@ -97,7 +256,9 @@ function Slot(x,y){
 function Entity(startX,startY=0){
     this.y = startY;
     this.x = startX;
-    this.type = fruits[Math.floor(Math.random() * (fruits.length - 2 ))];
+    let random = Math.floor(Math.random() * level.getData("entities"))
+    this.type = fruits[random];
+    this.code = `enti-${random}`;
     this.specialAbilities = false;
     this.grounted = false;
     this.parent;
@@ -106,7 +267,7 @@ function Entity(startX,startY=0){
     this.fall = function(){
         if(!this.grounted){
             
-            this.y += 2;
+            this.y += 1.8;
             this.parent = map.returnSlotByPosition(this.x,this.y)
 
             if(!this.parent.brotherBottom){ this.grounted = true; } 
@@ -125,9 +286,6 @@ function Entity(startX,startY=0){
         ctx.clearRect(this.x,this.y,slotSize,slotSize);
         ctx.drawImage(img,this.x+2,this.y+2,slotSize-4,slotSize-4);
     }
-
-    
-
 
 }
 
@@ -195,15 +353,15 @@ function Map(){
 // Functions to games
 
 function startGame(){
+    movingPaused = true;
     map.clearMap();
     gamePaused = false;
     map.fillSlots();
-    map.allSlots[20].entity.type = bomb;
-    map.allSlots[25].entity.type = bomb;
-    map.allSlots[15].entity.type = bomb;
-    map.renderMap();
+    level.loadLevel();
     lookForConnections();
-    setTimeout(gameLoop,100)
+    map.renderMap();
+    gameLoop();
+    setTimeout(()=>{movingPaused = false},3000);
 }
 
 function countMapSurface(){
@@ -233,7 +391,6 @@ function addEntities(){
     }
 }
 
-
 function liveEntites(){
     let landed = true;
     fallingEntities.forEach(entity=>{
@@ -249,9 +406,8 @@ function liveEntites(){
     }
 }
 
-
 function selectSlot(event){
-    if(gamePaused == false){
+    if(gamePaused == false && !secondSelected && !movingPaused ){
         let selectedSlot = map.returnSlotByPosition(event.offsetX,event.offsetY);
         if(selectedSlot){
             if(!firstSelected && selectedSlot.entity){
@@ -260,10 +416,14 @@ function selectSlot(event){
             else if(firstSelected && selectedSlot.entity && firstSelected.brothers.includes(selectedSlot)){
                 secondSelected = selectedSlot
                 startEntityMovment();
+                level.afterMove();
             }
             else if (firstSelected == selectedSlot){
-                lookForBombs(firstSelected,selectedSlot);
+                if(lookForBombs(firstSelected,selectedSlot)){
+                    level.afterMove();
+                } 
                 disselectAll();
+                
             }
             else{
                 disselectAll();
@@ -274,7 +434,7 @@ function selectSlot(event){
 }
 
 function startEntityMovment(firstTime = true){
-    let mover = {
+    let buffor = {
         firstSlot:firstSelected,
         secondSlot:secondSelected,
         moveX: firstSelected.x - secondSelected.x,
@@ -282,7 +442,7 @@ function startEntityMovment(firstTime = true){
         steps: slotSize,
         firstTime:firstTime,
     }
-    movingEntities = mover;
+    movingEntities = buffor;
 }
 
 
@@ -292,12 +452,15 @@ function animateEntityMovment(){
             animation.steps -- ;
             let enti1 =  animation.firstSlot.entity;
             let enti2 = animation.secondSlot.entity;
-            enti1.x += animation.moveX * -1;
-            enti1.y += animation.moveY * -1;
-            enti2.x += animation.moveX;
-            enti2.y += animation.moveY;
-            enti1.render();
-            enti2.render();
+            if(enti1 && enti2){
+                enti1.x += animation.moveX * -1;
+                enti1.y += animation.moveY * -1;
+                enti2.x += animation.moveX;
+                enti2.y += animation.moveY;
+                enti1.render();
+                enti2.render();
+            }
+
         } 
         else if(animation.steps == 0){
             animation.steps -- ;
@@ -311,32 +474,37 @@ function animateEntityMovment(){
             }
         }
 
-    }
+}
 
 
 function checker(firstSlot,secondSlot){
-    if(!lookForBombs(firstSlot,secondSlot)){
-        if(lookForConnections() == false){
-            startEntityMovment(false);
+    if(!gamePaused){
+        if(!lookForBombs(firstSlot,secondSlot)){
+            if(lookForConnections() == false){
+                startEntityMovment(false);
+            }
+            else{
+                disselectAll();
+            }
         }
         else{
             disselectAll();
         }
     }
-    else{
-        disselectAll();
-    }
+
 }
 
 
 function replaceEntities(firstSlot,secondSlot){
-        let buffor = firstSlot.entity;
-        firstSlot.entity = secondSlot.entity;
-        secondSlot.entity = buffor;
-        firstSlot.grabEntity();
-        secondSlot.grabEntity();
-        renderSlot(firstSlot);
-        renderSlot(secondSlot);
+        if(firstSlot && secondSlot){
+            let buffor = firstSlot.entity;
+            firstSlot.entity = secondSlot.entity;
+            secondSlot.entity = buffor;
+            firstSlot.grabEntity();
+            secondSlot.grabEntity();
+            renderSlot(firstSlot);
+            renderSlot(secondSlot);
+        }
 }
 
 function useBlaster(startSlot,blasterslot){
@@ -435,7 +603,7 @@ function lookForBombs(slot1,slot2){
     let foundedBomb = false;
 
     if(slot1 == slot2 && slot1.entity.type == blaster){
-        useBomb(slot1,countExplosionSurface(slot1,true))
+        return false
     }
     else if(bombs.includes(slot1.entity.type)){
         foundedBomb = slot1;
@@ -610,6 +778,7 @@ function makeBombs(blasters,bigBombs,smallBombs,toDestroy){
         if(toclear.entity){
             let type = toclear.entity.type;
             if(type != blaster && type != bomb && type != smallbomb){
+                level.givePoint(toclear.entity.code)
                 toclear.entity = false;
                 renderSlot(toclear);
                 startExplosionAnimation(toclear,1)
@@ -621,15 +790,20 @@ function makeBombs(blasters,bigBombs,smallBombs,toDestroy){
 
 function clearSlots(slots){
     for(let slot of slots){
+        level.givePoint(slot.entity.code)
         slot.entity = false; 
         ctx.clearRect(slot.realX,slot.realY,slotSize,slotSize);
+        startExplosionAnimation(slot,1)
 }
 }
 
 
 function startExplosionAnimation(slot,power=2){
+    audio1.currentTime = 0;
+    audio1.play();
     if(power === true){
         power = 4;
+        
     } else if(power === false){
         power = 2
     }
@@ -644,6 +818,7 @@ function startExplosionAnimation(slot,power=2){
         step:0,
     }
     explosionAnimations.push(explosion); 
+
 }
 
 
@@ -681,37 +856,16 @@ function gameLoop(){
     if(!gamePaused) setTimeout(gameLoop.bind(this));
 }
 
-let menuPagesMenager = {
-    pages:{},
-    activPage:undefined,
+// Final Loading
 
-    showPage:function(pageName){
-        console.log(pageName)
-        let page = this.pages[pageName];
-        if(page){
-            this.activPage.classList.remove("game-menu-page-active");
-            this.activPage = page;
-            page.classList.add("game-menu-page-active");
-        }
-    },
-
-    firstLoad:function(){
-        for(let page of document.getElementsByClassName("game-menu-page")){
-            let pageName = page.getAttribute("name");
-            this.pages[pageName] = page;
-            if(pageName == "game-load-page"){
-                this.activPage = page;
-            }
-        }
-
-        for(let button of document.getElementsByClassName("show-menu-page-button")){
-            button.addEventListener("click",(e)=>{
-                let value = e.target.value;
-                this.showPage(value);
-            })
-        }
-    }
-}
+level.createNew(20,5,function(){map.allSlots[40].entity.type=blaster;},{"enti-3":13});
+level.createNew(10,5,function(){},{"enti-0":30,"enti-1":30});
+level.createNew(10,6,function(){},{"enti-0":30});
+level.createNew(10,6,function(){},{"enti-0":30,"enti-1":30});
+level.createNew(10,7,function(){},{"enti-0":30,"enti-1":30});
+level.createNew(10,7,function(){},{"enti-0":30,"enti-1":30});
+level.createNew(10,8,function(){},{"enti-0":30,"enti-1":30});
+level.createNew(23,8,function(){},{"enti-0":30,"enti-1":30});
 
 menuPagesMenager.firstLoad();
 window.onload = menuPagesMenager.showPage("main-page");
