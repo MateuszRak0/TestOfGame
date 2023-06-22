@@ -54,7 +54,7 @@ body {
     border-top: 2px solid black;
     padding: 0;
     bottom: 0;
-    height: 64px;
+    height: 80px;
     width: 100%;
     max-width: 100%;
     left: 0;
@@ -64,7 +64,38 @@ body {
     border-radius: 10px 10px 0 0;
 }
 
-#game-topbar div{
+#goals-list{
+    display: flex;
+    flex-wrap:nowrap;
+    align-items: flex-end;
+    overflow-x: hidden;
+}
+
+.goal-box{
+    margin: 0 5px;
+    visibility: hidden;
+    height: 0;
+    width: 0;
+    overflow: hidden;
+}
+
+.goal-box-active{
+    width: 45%;
+    height: fit-content;
+    visibility: visible !important;
+}
+
+.goal-box progress{
+    width: 80%;
+    margin: auto;
+}
+
+.game-menu-page a{
+    color: #19e66b;
+    font-size: 1rem;
+}
+
+#game-topbar div:first-of-type{
     display: flex;
     flex-wrap: wrap;
     margin: 0;
@@ -109,29 +140,33 @@ body {
 #pause-game-button{
     text-shadow: none;
     font-weight: 400;
-    font-size: 1.2rem;
+    font-size: 1.3em;
+    font-family: monospace;
     margin: 0;
     padding: 0;
     position: absolute;
-    bottom: 5px;
-    right: 5px;
+    top: 0;
+    right:7px;
 }
 
 .select-level-button{
     display: block;
+    position: relative;
+    font-size: 2rem;
+    width: 30%;
+    text-align: center;
     padding: 8px 13px;
     border-radius: 10px;
     margin: 8px;
-    border:3px solid #00add8;
-    font-size: 1rem;
+    border:4px solid #1dbdc9;
     font-weight: 600;
     color: #1dbdc9;
     background-color: transparent;
-    transition: all .5s linear;
+    transition: border .5s linear;
+    overflow: hidden;
 }
 
 .select-level-button:hover{
-    color: #19b800;
     border-color: #19b800;
 }
 
@@ -143,3 +178,32 @@ div[name="select-level-page"] div{
     justify-content: center;
 }
 
+div[name="select-level-page"] div span{
+    position: relative;
+    z-index: 2;
+}
+
+.select-level-button input[type="radio"]{
+    position: absolute;
+    appearance: none;
+    width: 100%;
+    height: 100%;
+    display: block;
+    top: 0;
+    left: 0;
+    margin: 0;
+
+}
+
+.select-level-button input[type="radio"]:checked{
+    background-color: rgba(148, 230, 25, 0.4);
+    z-index: 0;
+}
+
+.select-level-button input[type="radio"]:disabled{
+    background-color: rgba(255, 0, 0, 0.4);
+}
+
+#display-moves::before{
+    content: "Moves: ";
+}
