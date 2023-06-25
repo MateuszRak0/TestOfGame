@@ -3,7 +3,10 @@ const slotSize = 40;
 const blaster = document.getElementById("game-entity-blaster")
 const bomb = document.getElementById("game-entity-bomb");
 const smallbomb = document.getElementById("game-entity-smallbomb");
+const wall = document.getElementById("game-entity-wall");
+const blocker = document.getElementById("game-entity-blocker");
 const bombs = [blaster,bomb,smallbomb];
+const noForConnect = [blaster,bomb,smallbomb,wall,blocker];
 
 let gamePaused = false;
 let movingPaused = true;
@@ -96,12 +99,13 @@ let level = {
     moves:0,
     selected:false,
 
-    createNew:function(moves,entities,specialFunctions,goals){
+    createNew:function(moves,entities,specialFunctions,goals,fillAll = false){
         let newLevel = {
             moves:moves,
             entities:entities,
             specialFunctions:specialFunctions,
-            goals:goals
+            goals:goals,
+            fillAll:fillAll
         }
         this.allLevels[this.counter] = newLevel;
         this.counter++;
@@ -116,9 +120,10 @@ let level = {
         scoreBoard.hideAllGoals();
         this.selected = this.allLevels[this.actual];
         this.moves = this.selected.moves;
-        this.selected.specialFunctions();
         scoreBoard.movesDisplay.innerHTML = this.moves;
         this.loadGoals();
+        map.fillSlots(this.selected.fillAll);
+        this.selected.specialFunctions();
     },
 
     loadGoals:function(){
@@ -185,14 +190,6 @@ let menuPagesMenager = {
     firstLoad:function(){
         scoreBoard.init();
 
-        for(let img of document.getElementsByName("game-entity")){
-            fruits.push(img)
-        }
-        
-        for(let img of document.getElementsByName("game-effect-bomb")){
-            explosionAnimationFrames.push(img);
-        }
-
         for(let page of document.getElementsByClassName("game-menu-page")){
             let pageName = page.getAttribute("name");
             this.pages[pageName] = page;
@@ -205,13 +202,6 @@ let menuPagesMenager = {
             button.addEventListener("click",(e)=>{
                 let value = e.target.value;
                 this.showPage(value);
-            })
-        }
-
-        for(let button of document.getElementsByName("select-level")){
-            level.selectLevelButtons[parseInt(button.value)] = button;
-            button.addEventListener("click",(e)=>{
-                level.actual = parseInt(e.target.value);
             })
         }
     }
@@ -245,12 +235,22 @@ function Slot(x,y){
         this.entity.parent = this;
     }
 
+    this.addEntity = function(type,code){
+        this.entity = new Entity(this.realX,this.realY,{type:type,code:code})
+    }
+
     this.dropEntity = function(){
-        this.entity.grounted = false;
-        let buffor = this.entity;
-        this.entity = false;
-        ctx.clearRect(this.realX,this.realY,slotSize,slotSize);
-        return buffor
+        if(this.entity){
+            if(this.entity.type != wall){
+                this.entity.grounted = false;
+                let buffor = this.entity;
+                this.entity = false;
+                return buffor
+            } else{
+                jumpOverWall(this);
+            }
+        }
+
     }
 
     this.checkBrothers = function(brotherSide,entityType){
@@ -284,23 +284,27 @@ function Slot(x,y){
 
 }
 
-function Entity(startX,startY=0){
+function Entity(startX,startY=0,bytype){
     this.y = startY;
     this.x = startX;
     let random = Math.floor(Math.random() * level.getData("entities"))
-    this.type = fruits[random];
-    this.code = `enti-${random}`;
+    if(bytype){
+        this.type = bytype.type;
+        this.code = bytype.code;
+    } 
+    else{
+        this.type = fruits[random];
+        this.code = `enti-${random}`;
+    }
     this.busy = false;
     this.grounted = false;
     this.parent;
-    this.speed = 1;
 
     
     this.fall = function(){
         if(!this.grounted){
             
-            this.y += this.speed;
-            this.speed += .05
+            this.y += 3;
             this.parent = map.returnSlotByPosition(this.x,this.y)
 
             if(!this.parent.brotherBottom){ this.grounted = true; } 
@@ -309,7 +313,6 @@ function Entity(startX,startY=0){
             if(this.grounted){
                 this.y = this.parent.realY;
                 this.parent.entity = this;
-                this.speed = 1;
             }
             this.render();
         }
@@ -365,11 +368,13 @@ function Map(){
         }
     }
 
-    this.fillSlots = function(){
+    this.fillSlots = function(fillAll){
         this.clearMap();
         this.allSlots.forEach(slot => {
-            slot.entity = new Entity();
-            slot.grabEntity();
+                slot.entity = false;
+                if(fillAll) slot.entity = new Entity();
+                slot.grabEntity();                
+
         });
     }
     
@@ -407,7 +412,6 @@ function countMapSurface(){
 function startGame(){
     movingPaused = true;
     gamePaused = false;
-    map.fillSlots();
     level.loadLevel();
     lookForConnections();
     map.renderMap();
@@ -452,6 +456,35 @@ function dropAllEntities(){
     }
 }
 
+function jumpOverWall(slot){
+    let slotOnBottom = slot.brotherBottom;
+    if(slotOnBottom){
+        if(!slotOnBottom.entity){
+            let brother = slot.brotherLeft;
+            if(!brother){
+                brother = slot.brotherRight;
+            } 
+
+            else if(brother.entity){
+                if(brother.entity.type == wall){
+                    brother = slot.brotherRight;
+                }
+            }             
+            if(brother){
+                if(brother.entity){
+                    if(brother.entity.type != wall){
+                        let dropedEntity = brother.entity;
+                        brother.entity = false;
+                        slot.brotherBottom.entity = dropedEntity;
+                        slot.brotherBottom.grabEntity();
+                        renderSlot(brother);
+                        renderSlot(slotOnBottom);
+                    }
+                }
+            }                               
+        }
+    }
+}
 
 //#######################
 
@@ -460,11 +493,17 @@ function selectSlot(event){
         let selectedSlot = map.returnSlotByPosition(event.offsetX,event.offsetY);
         if(selectedSlot){
             if(selectedSlot.entity){
-                if(selectedSlot.entity.busy == true) disselectAll();
-                if(!firstSelected){
+
+                if(selectedSlot.entity.busy == true || selectedSlot.entity.type == wall){
+                    disselectAll();
+                    console.log("blocked")
+                } 
+
+                else if(!firstSelected){
                     firstSelected = selectedSlot
                 }
-                else if(firstSelected && firstSelected.brothers.includes(selectedSlot)){
+
+                else if(firstSelected.brothers.includes(selectedSlot)){
                     secondSelected = selectedSlot
                     startEntityMovment();
                     level.afterMove();
@@ -724,6 +763,9 @@ function lookForConnections(){
     
     for(let slot of map.allSlots){
         if(slot.entity != false){
+
+            if(noForConnect.includes(slot.entity.type)) continue
+
             let resultTop = slot.checkBrothers("brotherTop",slot.entity.type);
             let resultBottom = slot.checkBrothers("brotherBottom",slot.entity.type);
             let resultLeft = slot.checkBrothers("brotherLeft",slot.entity.type);
@@ -796,7 +838,13 @@ function renderSlot(slot){
         ctx.clearRect(slot.realX,slot.realY,slotSize,slotSize);
         if(slot.entity){
             let img = slot.entity.type;
-            ctx.drawImage(img,slot.realX+2,slot.realY+2,slotSize-4,slotSize-4);
+            if(slot.entity.type != wall){
+                ctx.drawImage(img,slot.realX+2,slot.realY+2,slotSize-4,slotSize-4);
+            }
+            else{
+                ctx.drawImage(img,slot.realX,slot.realY,slotSize,slotSize);
+            }
+            
         }
     }
 
@@ -880,7 +928,7 @@ function animateExplosions(){
     if(explosionAnimations.length > 0){
         let inProgress = false;
         explosionAnimations.forEach(explosion =>{
-            if(explosion.step < 75){
+            if(explosion.step <= explosionAnimationFrames.length-1){
                 inProgress = true;
                 let img = explosionAnimationFrames[explosion.step];
                 ctx.drawImage(img,explosion.x,explosion.y,explosion.size,explosion.size);
@@ -910,14 +958,17 @@ function gameLoop(){
     if(!gamePaused) setTimeout(gameLoop.bind(this));
 }
 
-// Final Loading
+//First Loading !
 
-
-
-
-
-level.createNew(13,5,function(){map.allSlots[40].entity.type=blaster; map.allSlots[41].entity.type=blaster;},{"enti-0":20,"enti-1":20});
-level.createNew(16,5,function(){map.allSlots[40].entity.type=blaster;},{"enti-1":22});
+(function loadingGameComponents(){
+level.createNew(13,5,function(){
+    map.allSlots.forEach((slot)=>{
+        if(slot.y == 7 && slot.x < 5){
+            slot.addEntity(wall,"wall")
+        }
+    })
+},{"enti-0":20,"enti-1":20});
+level.createNew(16,5,function(){map.allSlots[40].entity.type=blaster;},{"enti-0":10,"enti-1":10,"enti-2":10});
 level.createNew(20,6,function(){map.allSlots[40].entity.type=blaster;},{"enti-0":13,"enti-1":13});
 level.createNew(12,6,function(){map.allSlots[40].entity.type=blaster;},{"enti-3":13});
 level.createNew(15,7,function(){map.allSlots[40].entity.type=blaster;},{"enti-4":13});
@@ -925,6 +976,23 @@ level.createNew(15,7,function(){map.allSlots[40].entity.type=blaster;},{"enti-5"
 level.createNew(23,8,function(){map.allSlots[40].entity.type=blaster;},{"enti-6":13});
 level.createNew(23,8,function(){map.allSlots[40].entity.type=blaster;},{"enti-7":13});
 
+
+for(let img of document.getElementsByName("game-entity")){
+    fruits.push(img)
+}
+
+for(let img of document.getElementsByName("game-effect-bomb")){
+    explosionAnimationFrames.push(img);
+}
+
+for(let button of document.getElementsByName("select-level")){
+    level.selectLevelButtons[parseInt(button.value)] = button;
+    button.addEventListener("click",(e)=>{
+        level.actual = parseInt(e.target.value);
+    })
+}
+
+audioPlayer.normalizeVolume();
 menuPagesMenager.firstLoad();
 window.onload = menuPagesMenager.showPage("main-page");
 canvas.addEventListener("mousedown",selectSlot)
@@ -934,7 +1002,18 @@ document.getElementById("resume-game-button").addEventListener("click",()=>{
     gamePaused = false;
     gameLoop();
 })
+}())
 
 
 
 
+
+
+
+function mmbb(){
+    map.allSlots[40].entity.type = smallbomb;
+    map.allSlots[41].entity.type = smallbomb;
+    map.allSlots[42].entity.type = smallbomb;
+    map.allSlots[43].entity.type = smallbomb;
+    map.renderMap();
+}
