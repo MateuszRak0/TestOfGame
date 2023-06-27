@@ -102,13 +102,14 @@
                 <label class="select-level-button"><input type="radio" name="select-level" value="7" disabled><span>8</span></label>
                 </div>
                 <button type="button" class="show-menu-page-button" value="ingame-page" id="start-game-button">Start Game</button>
+                <button type="button" class="show-menu-page-button" value="main-page">Return</button>
             </div>
 
 
-            <div class="game-menu-page game-menu-page-active" name="game-load-page">
-                <span class="game-menu-page-bigTitle">Game Loading</span>
+            <!-- <div class="game-menu-page game-menu-page-active" name="game-load-page">
+                <span class="game-menu-page-bigTitle">Game Loading</span>                           
                 <progress id="game-load-progress" min="0" value="0" max="100"></progress>
-            </div>
+            </div> -->
 
             <div class="game-menu-page" name="mission-preview-page">
                 <span class="game-menu-page-bigTitle">Your  Mission</span>
@@ -119,7 +120,7 @@
 
             </canvas>
 
-            <div class="game-menu-page" name="main-page">
+            <div class="game-menu-page game-menu-page-active" name="main-page">
                 <span class="game-menu-page-bigTitle">Gems Hunter</span>
                 <button type="button" class="show-menu-page-button" value="select-level-page">New Game</button>
                 <button type="button" class="show-menu-page-button" value="howplay-page">How to play ?</button>
@@ -129,9 +130,24 @@
 
             <div class="game-menu-page" name="howplay-page">
                 <span class="game-menu-page-bigTitle">How to play ?</span>
-                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolor incidunt, distinctio, repudiandae ex
-                    voluptatem quibusdam explicabo nisi iure et nihil, corrupti atque qui autem sequi in possimus quo
-                    optio inventore.</p>
+                <div class="scroll-box">
+                    <p>
+                        Każdy z poziomów gry wymaga od ciebie czegoś innego. Cele które musisz wypełnić na dany poziom znajdują się na pasku na dole ekranu.
+                        Poniżej znajdują się dwa przykładowe cele
+                    </p>
+                    <img src="img/help1.png" alt="">
+                    <p> 
+                        Aby je wykonać musisz zniszczyć obiekt tyle razy aż zapełnisz biały pasek pod spodem. 
+                        Aby zniszczyć jakiś obiekt musisz ustawic minimum 3 takie same obiekty w rzędzie. Możesz zamienić dwa obiekty obok siebie miejscami klikając na nie 
+                    </p>
+                    <img src="img/help2.png" alt="">
+                    <p>
+                        Jeżeli połączysz razem więcej niż 3 takie same obiekty to nie tylko je zniszczysz ale otrzymasz na 
+                        ich miejsce specjalny bonus zależny od ilośći zniszczonych obiektów
+                    </p>
+
+
+                </div>
                 <button type="button" class="show-menu-page-button" value="main-page">Return</button>
             </div>
 
@@ -179,6 +195,21 @@
                     </div>
 
                     <div class="goal-box" name="enti-7">
+                        <img src="img/p8.png" alt="">
+                        <progress min="0" value="0" max="100"></progress>
+                    </div>
+
+                    <div class="goal-box" name="smallbomb">
+                        <img src="img/p8.png" alt="">
+                        <progress min="0" value="0" max="100"></progress>
+                    </div>
+
+                    <div class="goal-box" name="bomb">
+                        <img src="img/p8.png" alt="">
+                        <progress min="0" value="0" max="100"></progress>
+                    </div>
+
+                    <div class="goal-box" name="blaster">
                         <img src="img/p8.png" alt="">
                         <progress min="0" value="0" max="100"></progress>
                     </div>
