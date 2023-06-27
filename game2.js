@@ -8,6 +8,11 @@ const blocker = document.getElementById("game-entity-blocker");
 const bombs = [blaster,bomb,smallbomb];
 const noForConnect = [blaster,bomb,smallbomb,wall,blocker];
 
+const ctx = canvas.getContext("2d");
+ctx.shadowOffsetX = 0;
+ctx.shadowOffsetY = 0;
+ctx.shadowBlur = 3;
+
 let gamePaused = false;
 let movingPaused = true;
 let fallingEntities = [];
@@ -16,7 +21,6 @@ let movingEntities = false;
 let lastSelected = false;
 let firstSelected;
 let secondSelected;
-let ctx = canvas.getContext("2d");
 let fruits = [];
 let explosionAnimationFrames = [];
 let map = new Map();
@@ -27,11 +31,14 @@ let audioPlayer = {
     audio3:new Audio('sounds/bad-explosion-6855.mp3'),
     audio4:new Audio('sounds/big-explosion-41783.mp3'),
     audio5:new Audio('sounds/short-success-sound-glockenspiel-treasure-video-game-6346.mp3'),
+    audio6:new Audio('sounds/interface-124464.mp3'),
+    audio7:new Audio('sounds/fail-144746.mp3'),
 
     normalizeVolume:function(){
         this.audio1.volume = .4;
         this.audio3.volume = .4;
         this.audio4.volume = .6;
+        this.audio6.volume = .4;
     },
     
     playAudio:function(audioNumber){
@@ -139,6 +146,7 @@ let level = {
         scoreBoard.movesDisplay.innerHTML = this.moves;
         if(this.moves < 0){
             gamePaused = true;
+            audioPlayer.playAudio(7);
             menuPagesMenager.showPage("game-over");
         }
     },
@@ -179,6 +187,7 @@ let menuPagesMenager = {
     activPage:undefined,
 
     showPage:function(pageName){
+        audioPlayer.playAudio(6)
         let page = this.pages[pageName];
         if(page){
             this.activPage.classList.remove("game-menu-page-active");
@@ -193,7 +202,7 @@ let menuPagesMenager = {
         for(let page of document.getElementsByClassName("game-menu-page")){
             let pageName = page.getAttribute("name");
             this.pages[pageName] = page;
-            if(pageName == "game-load-page"){
+            if(pageName == "main-page"){
                 this.activPage = page;
             }
         }
@@ -361,7 +370,6 @@ function Map(){
 
     this.renderMap = function(slots = this.allSlots){
         for(let slot of slots){
-
                 if(slot.entity){
                     slot.entity.render();
                 }
@@ -410,13 +418,15 @@ function countMapSurface(){
 //#######################
 
 function startGame(){
+    explosionAnimations = [];
+    fallingEntities = [];
     movingPaused = true;
     gamePaused = false;
     level.loadLevel();
     lookForConnections();
     map.renderMap();
     gameLoop();
-    setTimeout(()=>{movingPaused = false},2000);
+    setTimeout(()=>{movingPaused = false},1000);
 }
 
 function addEntities(){
@@ -496,8 +506,7 @@ function selectSlot(event){
 
                 if(selectedSlot.entity.busy == true || selectedSlot.entity.type == wall){
                     disselectAll();
-                    console.log("blocked")
-                } 
+                } // diselect if entity make some actions or it is a wall.
 
                 else if(!firstSelected){
                     firstSelected = selectedSlot
@@ -609,6 +618,7 @@ function disselectAll(){
 }
 
 function focusSelected(){
+    ctx.shadowColor = "yellow";
     if(firstSelected){
         ctx.clearRect(firstSelected.realX,firstSelected.realY,slotSize,slotSize);
         let img = firstSelected.entity.type;
@@ -619,6 +629,7 @@ function focusSelected(){
         let img = secondSelected.entity.type;
         ctx.drawImage(img,secondSelected.realX,secondSelected.realY,slotSize,slotSize);
     }
+    ctx.shadowColor = "transparent";
 }
 
 //#######################
@@ -958,24 +969,57 @@ function gameLoop(){
     if(!gamePaused) setTimeout(gameLoop.bind(this));
 }
 
-//First Loading !
+//Loading levels
+(function(){
+    let lvl1F = function(){
+        map.allSlots.forEach((slot)=>{
+            slot.addEntity(blocker,"blocker")
+            if(slot.y == 5){
+                if(slot.x == 3 || slot.x == 4 || slot.x == 6){
+                    slot.addEntity(fruits[0],"enti-0")
+                }
+            }
+        })
+    };
 
-(function loadingGameComponents(){
-level.createNew(13,5,function(){
-    map.allSlots.forEach((slot)=>{
-        if(slot.y == 7 && slot.x < 5){
-            slot.addEntity(wall,"wall")
-        }
-    })
-},{"enti-0":20,"enti-1":20});
-level.createNew(16,5,function(){map.allSlots[40].entity.type=blaster;},{"enti-0":10,"enti-1":10,"enti-2":10});
-level.createNew(20,6,function(){map.allSlots[40].entity.type=blaster;},{"enti-0":13,"enti-1":13});
-level.createNew(12,6,function(){map.allSlots[40].entity.type=blaster;},{"enti-3":13});
-level.createNew(15,7,function(){map.allSlots[40].entity.type=blaster;},{"enti-4":13});
-level.createNew(15,7,function(){map.allSlots[40].entity.type=blaster;},{"enti-5":13});
-level.createNew(23,8,function(){map.allSlots[40].entity.type=blaster;},{"enti-6":13});
-level.createNew(23,8,function(){map.allSlots[40].entity.type=blaster;},{"enti-7":13});
+    let lvl2F = function(){
+        map.allSlots.forEach((slot)=>{
+            slot.addEntity(blocker,"blocker");
+            let x = Math.ceil(map.width/2);
+            let y = Math.ceil(map.height/2);
+            if(slot.x == x && slot.y == y){
+                slot.addEntity(blaster,"blaster");
+            }
+        })
+    };
 
+    let lvl3F = function(){
+        map.allSlots.forEach((slot)=>{
+            let x = Math.ceil(map.width/2);
+            if(slot.y == 3){
+                slot.addEntity(wall,"wall");
+            }
+            else if(slot.y == 2 && slot.x == x){
+                slot.addEntity(bomb,"bomb");
+            }
+        })
+    };
+
+
+    level.createNew(13,5,lvl1F,{"enti-0":3});
+    level.createNew(16,5,lvl2F,{"enti-0":10,"enti-1":10,"enti-2":10});
+    level.createNew(20,6,lvl3F,{"enti-0":13,"enti-1":13});
+    level.createNew(12,6,function(){map.allSlots[40].entity.type=blaster;},{"enti-3":13});
+    level.createNew(15,7,function(){map.allSlots[40].entity.type=blaster;},{"enti-4":13});
+    level.createNew(15,7,function(){map.allSlots[40].entity.type=blaster;},{"enti-5":13});
+    level.createNew(23,8,function(){map.allSlots[40].entity.type=blaster;},{"enti-6":13});
+    level.createNew(23,8,function(){map.allSlots[40].entity.type=blaster;},{"enti-7":13});
+
+}());
+
+
+// Loading Rest of components 
+(function(){
 
 for(let img of document.getElementsByName("game-entity")){
     fruits.push(img)
@@ -994,7 +1038,6 @@ for(let button of document.getElementsByName("select-level")){
 
 audioPlayer.normalizeVolume();
 menuPagesMenager.firstLoad();
-window.onload = menuPagesMenager.showPage("main-page");
 canvas.addEventListener("mousedown",selectSlot)
 document.getElementById("start-game-button").addEventListener("click",startGame)
 document.getElementById("pause-game-button").addEventListener("click",()=>{gamePaused = true})
@@ -1002,18 +1045,7 @@ document.getElementById("resume-game-button").addEventListener("click",()=>{
     gamePaused = false;
     gameLoop();
 })
-}())
+}());
 
 
 
-
-
-
-
-function mmbb(){
-    map.allSlots[40].entity.type = smallbomb;
-    map.allSlots[41].entity.type = smallbomb;
-    map.allSlots[42].entity.type = smallbomb;
-    map.allSlots[43].entity.type = smallbomb;
-    map.renderMap();
-}
