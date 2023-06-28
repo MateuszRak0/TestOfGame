@@ -34,18 +34,25 @@ let audioPlayer = {
     audio6:new Audio('sounds/interface-124464.mp3'),
     audio7:new Audio('sounds/fail-144746.mp3'),
 
-    normalizeVolume:function(){
+    init:function(){
         this.audio1.volume = .4;
         this.audio3.volume = .4;
         this.audio4.volume = .6;
         this.audio6.volume = .4;
+        for(let i=1;i<8;i++){
+            this[`audio${i}`].onload = loading;
+        }
+        
+
     },
     
     playAudio:function(audioNumber){
         let audio = this[`audio${audioNumber}`];
         audio.currentTime = 0;
         audio.play()
-    }
+    },
+
+
 
 }
 
@@ -167,7 +174,6 @@ let level = {
     gameover:function(){
         let msgBox = document.getElementById("after-win-message");
         audioPlayer.playAudio(2);
-        gamePaused = true;
         disselectAll();
         scoreBoard.hideAllGoals();
         menuPagesMenager.showPage("winner-page");
@@ -179,6 +185,7 @@ let level = {
         } else{
             msgBox.innerHTML = `Congratulations you pass final level !`;
         }
+        setTimeout(()=>{gamePaused = true},1000);
     }
 }
 
@@ -187,12 +194,12 @@ let menuPagesMenager = {
     activPage:undefined,
 
     showPage:function(pageName){
-        audioPlayer.playAudio(6)
         let page = this.pages[pageName];
         if(page){
             this.activPage.classList.remove("game-menu-page-active");
             this.activPage = page;
             page.classList.add("game-menu-page-active");
+            audioPlayer.playAudio(6)
         }
     },
 
@@ -202,7 +209,7 @@ let menuPagesMenager = {
         for(let page of document.getElementsByClassName("game-menu-page")){
             let pageName = page.getAttribute("name");
             this.pages[pageName] = page;
-            if(pageName == "main-page"){
+            if(pageName == "game-load-page"){
                 this.activPage = page;
             }
         }
@@ -331,6 +338,7 @@ function Entity(startX,startY=0,bytype){
         let img = this.type;
         ctx.clearRect(this.x,this.y,slotSize,slotSize);
         ctx.drawImage(img,this.x+2,this.y+2,slotSize-4,slotSize-4);
+        
     }
 
 }
@@ -971,29 +979,31 @@ function gameLoop(){
 
 //Loading levels
 (function(){
-    let lvl1F = function(){
+
+    let center_x = Math.ceil(map.width/2);
+    let center_y = Math.ceil(map.height/2);
+
+    let lvl1 = function(){
         map.allSlots.forEach((slot)=>{
             slot.addEntity(blocker,"blocker")
-            if(slot.y == 5){
+            if(slot.y == center_y){
                 if(slot.x == 3 || slot.x == 4 || slot.x == 6){
-                    slot.addEntity(fruits[0],"enti-0")
+                    slot.addEntity(fruits[0],"enti-0");
                 }
             }
         })
     };
 
-    let lvl2F = function(){
+    let lvl2 = function(){
         map.allSlots.forEach((slot)=>{
             slot.addEntity(blocker,"blocker");
-            let x = Math.ceil(map.width/2);
-            let y = Math.ceil(map.height/2);
-            if(slot.x == x && slot.y == y){
+            if(slot.x == center_x && slot.y == center_y){
                 slot.addEntity(blaster,"blaster");
             }
         })
     };
 
-    let lvl3F = function(){
+    let lvl3 = function(){
         map.allSlots.forEach((slot)=>{
             let x = Math.ceil(map.width/2);
             if(slot.y == 3){
@@ -1005,15 +1015,28 @@ function gameLoop(){
         })
     };
 
+    let lvl4 = function(){
+        map.allSlots.forEach((slot)=>{
+            if(slot.x%2 == 0){
+                slot.addEntity(wall,"wall");
+            } 
+            else{
+                if(slot.y == center_y){
+                    slot.addEntity(bomb,"bomb")
+                }
+            }
+        })
+    };
 
-    level.createNew(13,5,lvl1F,{"enti-0":3});
-    level.createNew(16,5,lvl2F,{"enti-0":10,"enti-1":10,"enti-2":10});
-    level.createNew(20,6,lvl3F,{"enti-0":13,"enti-1":13});
-    level.createNew(12,6,function(){map.allSlots[40].entity.type=blaster;},{"enti-3":13});
-    level.createNew(15,7,function(){map.allSlots[40].entity.type=blaster;},{"enti-4":13});
-    level.createNew(15,7,function(){map.allSlots[40].entity.type=blaster;},{"enti-5":13});
-    level.createNew(23,8,function(){map.allSlots[40].entity.type=blaster;},{"enti-6":13});
-    level.createNew(23,8,function(){map.allSlots[40].entity.type=blaster;},{"enti-7":13});
+
+    level.createNew(1,5,lvl1,{"enti-0":3});
+    level.createNew(16,5,lvl2,{"enti-0":10,"enti-1":10,"enti-2":10});
+    level.createNew(20,6,lvl3,{"enti-0":13,"enti-1":13});
+    level.createNew(12,6,lvl4,{"enti-3":13},true);
+    level.createNew(15,7,lvl3,{"enti-4":13});
+    level.createNew(15,7,lvl3,{"enti-5":13});
+    level.createNew(23,8,lvl3,{"enti-6":13});
+    level.createNew(23,8,lvl3,{"enti-7":13});
 
 }());
 
@@ -1036,7 +1059,7 @@ for(let button of document.getElementsByName("select-level")){
     })
 }
 
-audioPlayer.normalizeVolume();
+audioPlayer.init();
 menuPagesMenager.firstLoad();
 canvas.addEventListener("mousedown",selectSlot)
 document.getElementById("start-game-button").addEventListener("click",startGame)
@@ -1048,4 +1071,14 @@ document.getElementById("resume-game-button").addEventListener("click",()=>{
 }());
 
 
+function loading(){
+    if(document.readyState == "complete"){
+        let startButton = document.getElementById("first-button")
+        startButton.disabled = false;
+        startButton.innerHTML = "Click to start";
+    } else{
+        setTimeout(loading,1000)
+    }
+}
 
+loading();
