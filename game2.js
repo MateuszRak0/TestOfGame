@@ -34,16 +34,11 @@ let audioPlayer = {
     audio6:new Audio('sounds/interface-124464.mp3'),
     audio7:new Audio('sounds/fail-144746.mp3'),
 
-    init:function(){
+    normalizeVolume:function(){
         this.audio1.volume = .4;
         this.audio3.volume = .4;
         this.audio4.volume = .6;
         this.audio6.volume = .4;
-        for(let i=1;i<8;i++){
-            this[`audio${i}`].onload = loading;
-        }
-        
-
     },
     
     playAudio:function(audioNumber){
@@ -1059,7 +1054,7 @@ for(let button of document.getElementsByName("select-level")){
     })
 }
 
-audioPlayer.init();
+audioPlayer.normalizeVolume();
 menuPagesMenager.firstLoad();
 canvas.addEventListener("mousedown",selectSlot)
 document.getElementById("start-game-button").addEventListener("click",startGame)
