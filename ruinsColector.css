@@ -256,3 +256,25 @@ div[name="select-level-page"] div span{
         transform: scale(1);
     }
 }
+
+.scroll-box{
+    overflow-y: scroll;
+    padding-right: 5px;
+    height: 30%;
+    background-color: aliceblue;
+}
+
+.scroll-box::-webkit-scrollbar{
+    appearance: none;
+}
+
+
+.scroll-box::-webkit-scrollbar-track{
+    margin: 0;
+    padding: 0;
+}
+
+.scroll-box::-webkit-scrollbar-thumb{
+    background-color: #1dbdc9;
+    border-radius: 15px;
+}
