@@ -260,8 +260,7 @@ div[name="select-level-page"] div span{
 .scroll-box{
     overflow-y: scroll;
     padding-right: 5px;
-    height: 30%;
-    background-color: aliceblue;
+    max-height: 70%;
 }
 
 .scroll-box::-webkit-scrollbar{
