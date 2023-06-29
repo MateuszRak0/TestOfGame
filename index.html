@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="ruinsColector.css">
     <script src="game2.js" defer></script>
 </head>
+
 <body>
     <div id="game-container">
         <div id="game-window">
@@ -92,23 +93,33 @@
             <div class="game-menu-page" name="select-level-page">
                 <span class="game-menu-page-bigTitle">Select Level</span>
                 <div>
-                <label class="select-level-button"><input type="radio" name="select-level" value="0" checked><span>1</span></label>
-                <label class="select-level-button"><input type="radio" name="select-level" value="1" disabled><span>2</span></label>
-                <label class="select-level-button"><input type="radio" name="select-level" value="2" disabled><span>3</span></label>
-                <label class="select-level-button"><input type="radio" name="select-level" value="3" disabled><span>4</span></label>
-                <label class="select-level-button"><input type="radio" name="select-level" value="4" disabled><span>5</span></label>
-                <label class="select-level-button"><input type="radio" name="select-level" value="5" disabled><span>6</span></label>
-                <label class="select-level-button"><input type="radio" name="select-level" value="6" disabled><span>7</span></label>
-                <label class="select-level-button"><input type="radio" name="select-level" value="7" disabled><span>8</span></label>
+                    <label class="select-level-button"><input type="radio" name="select-level" value="0"
+                            checked><span>1</span></label>
+                    <label class="select-level-button"><input type="radio" name="select-level"
+                            value="1"><span>2</span></label>
+                    <label class="select-level-button"><input type="radio" name="select-level"
+                            value="2"><span>3</span></label>
+                    <label class="select-level-button"><input type="radio" name="select-level"
+                            value="3"><span>4</span></label>
+                    <label class="select-level-button"><input type="radio" name="select-level"
+                            value="4"><span>5</span></label>
+                    <label class="select-level-button"><input type="radio" name="select-level"
+                            value="5"><span>6</span></label>
+                    <label class="select-level-button"><input type="radio" name="select-level"
+                            value="6"><span>7</span></label>
+                    <label class="select-level-button"><input type="radio" name="select-level"
+                            value="7"><span>8</span></label>
                 </div>
-                <button type="button" class="show-menu-page-button" value="ingame-page" id="start-game-button">Start Game</button>
+                <button type="button" class="show-menu-page-button" value="ingame-page" id="start-game-button">Start
+                    Game</button>
                 <button type="button" class="show-menu-page-button" value="main-page">Return</button>
             </div>
 
 
             <div class="game-menu-page game-menu-page-active" name="game-load-page">
-                <span class="game-menu-page-bigTitle">Game Loading</span>                           
-                <button type="button" class="show-menu-page-button" value="main-page" id="first-button" disabled>Please Wait</button>
+                <span class="game-menu-page-bigTitle">Game Loading</span>
+                <button type="button" class="show-menu-page-button" value="main-page" id="first-button" disabled>Please
+                    Wait</button>
             </div>
 
             <canvas id="game-scene">
@@ -127,34 +138,49 @@
                 <span class="game-menu-page-bigTitle">How to play ?</span>
                 <div class="scroll-box">
                     <p>
-                        Each level of the game requires something different from you. The objectives that you need to complete level are in the bar at the bottom of the screen.
+                        Each level of the game requires something different from you. The objectives that you need to
+                        complete level are in the bar at the bottom of the screen.
                         Below you can see two example objectives
                     </p>
                     <img src="img/help1.png" alt="">
-                    <p> 
-                        To complete them, you must destroy the object as many times as you fill the white bar underneath.
-                        To destroy an object, you must place at least 3 of the same objects in a row. You can swap two objects next to each other by clicking on them
+                    <p>
+                        To complete them, you must destroy the object as many times as you fill the white bar
+                        underneath.
+                        To destroy an object, you must place at least 3 of the same objects in a row. You can swap two
+                        objects next to each other by clicking on them
                     </p>
                     <img src="img/help2.png" alt="">
                     <p>
-                        
-                        If you combine more than 3 of the same objects together, you will not only destroy them, but you will also receive a
+
+                        If you combine more than 3 of the same objects together, you will not only destroy them, but you
+                        will also receive a
                         a special object depending on the number of destroyed objects
                     </p>
+                    <hr>
                     <p>There are 3 different special objects in the game: </p>
-<p>
+                    <p>
                         <img src="img/smallbomb.png" alt="">
                         Small bomb - Make small explosion by double click or move
-</p>
-<p>
+                    </p>
+                    <p>
                         <img src="img/bomb.png" alt="">
                         Big bomb - Make big explosion by double click or move
-</p>
-<p>
+                    </p>
+                    <p>
                         <img src="img/blaster.png" alt="">
-                        Cleaner - Swipe with an object to destroy every similar object on the map or merge two cleners together to clear the entire MAP!
-</p>
-                    <p>Oprócz tego mamy dwa obiekty utrudniające gre !</p>
+                        Cleaner - Swipe with an object to destroy every similar object on the map or merge two cleners
+                        together to clear the entire MAP!
+                    </p>
+                    <hr>
+                    <p>And 2 different obstructors to make game harder</p>
+                    <p>
+                        <img src="img/blocker.png" alt="">
+                        Blocker - You can Swipe it but only bombs or Cleaner can destroy it
+                    </p>
+                    <p>
+                        <img src="img/wall.png" alt="">
+                        Wall - You can't Swipe and only bombs or cleaner can destroy it
+                    </p>
 
 
                 </div>
@@ -163,15 +189,16 @@
 
             <div class="game-menu-page" name="author-page">
                 <span class="game-menu-page-bigTitle">About author</span>
-                <p>Game created by Mateusz Rak. Visit my website at <a href="http://mrak.j.pl" target="_blank">mrak.j.pl</a></p>
-                
+                <p>Game created by Mateusz Rak. Visit my website at <a href="http://mrak.j.pl"
+                        target="_blank">mrak.j.pl</a></p>
+
                 <button type="button" class="show-menu-page-button" value="main-page">Return</button>
             </div>
 
             <div class="game-menu-page" name="ingame-page" id="game-topbar">
                 <p id="display-moves">22</p>
                 <div id="goals-list">
-                    
+
                     <div class="goal-box" name="enti-0">
                         <img src="img/p1.png" alt="">
                         <progress min="0" value="0" max="100"></progress>
@@ -210,27 +237,29 @@
                     </div>
 
                     <div class="goal-box" name="smallbomb">
-                        <img src="img/p8.png" alt="">
+                        <img src="img/smallbomb.png" alt="">
                         <progress min="0" value="0" max="100"></progress>
                     </div>
 
                     <div class="goal-box" name="bomb">
-                        <img src="img/p8.png" alt="">
+                        <img src="img/bomb.png" alt="">
                         <progress min="0" value="0" max="100"></progress>
                     </div>
 
                     <div class="goal-box" name="blaster">
-                        <img src="img/p8.png" alt="">
+                        <img src="img/blaster.png" alt="">
                         <progress min="0" value="0" max="100"></progress>
                     </div>
-                    
+
                 </div>
-                <button type="button" class="show-menu-page-button" value="pause-page" id="pause-game-button">PAUSE</button>
-            </div>    
+                <button type="button" class="show-menu-page-button" value="pause-page"
+                    id="pause-game-button">PAUSE</button>
+            </div>
 
             <div class="game-menu-page" name="pause-page">
                 <span class="game-menu-page-bigTitle">Game paused</span>
-                <button type="button" class="show-menu-page-button" value="ingame-page" id="resume-game-button">Resume Game</button>
+                <button type="button" class="show-menu-page-button" value="ingame-page" id="resume-game-button">Resume
+                    Game</button>
                 <button type="button" class="show-menu-page-button" value="main-page">Back to menu</button>
             </div>
 
