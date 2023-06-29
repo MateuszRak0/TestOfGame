@@ -15,14 +15,17 @@ ctx.shadowBlur = 3;
 
 let gamePaused = false;
 let movingPaused = true;
+
+let entities = [];
 let fallingEntities = [];
 let explosionAnimations = [];
+let explosionAnimationFrames = [];
+
 let movingEntities = false;
-let lastSelected = false;
 let firstSelected;
 let secondSelected;
-let fruits = [];
-let explosionAnimationFrames = [];
+
+
 let map = new Map();
 
 let audioPlayer = {
@@ -36,9 +39,10 @@ let audioPlayer = {
 
     normalizeVolume:function(){
         this.audio1.volume = .4;
+        this.audio2.volume = .6;
         this.audio3.volume = .4;
         this.audio4.volume = .6;
-        this.audio6.volume = .4;
+        this.audio6.volume = .2;
     },
     
     playAudio:function(audioNumber){
@@ -46,13 +50,10 @@ let audioPlayer = {
         audio.currentTime = 0;
         audio.play()
     },
-
-
-
 }
 
 
-const scoreBoard = {
+let scoreBoard = {
     movesDisplay:document.getElementById("display-moves"),
     goalBoxes:{},
 
@@ -95,11 +96,10 @@ const scoreBoard = {
             this.hideSingleGoal(name);
             return true
         }
-
     }
 }
 
-let level = {
+let levelsMenager = {
     counter:0,
     allLevels:{},
     actualGoals:[],
@@ -199,7 +199,6 @@ let menuPagesMenager = {
     },
 
     firstLoad:function(){
-        scoreBoard.init();
 
         for(let page of document.getElementsByClassName("game-menu-page")){
             let pageName = page.getAttribute("name");
@@ -292,19 +291,18 @@ function Slot(x,y){
         }
        return result
     }
-
 }
 
 function Entity(startX,startY=0,bytype){
     this.y = startY;
     this.x = startX;
-    let random = Math.floor(Math.random() * level.getData("entities"))
+    let random = Math.floor(Math.random() * levelsMenager.getData("entities"))
     if(bytype){
         this.type = bytype.type;
         this.code = bytype.code;
     } 
     else{
-        this.type = fruits[random];
+        this.type = entities[random];
         this.code = `enti-${random}`;
     }
     this.busy = false;
@@ -335,7 +333,6 @@ function Entity(startX,startY=0,bytype){
         ctx.drawImage(img,this.x+2,this.y+2,slotSize-4,slotSize-4);
         
     }
-
 }
 
 function Map(){
@@ -411,21 +408,18 @@ function countMapSurface(){
         document.getElementById("game-topbar").style.height = `${2*slotSize}px`;
     }
 
-    if(y < 8){
-        console.log("Screen to small but play if u wanna")
-    }
-
     return {x:x-1,y:y-1}
 }   
 
 //#######################
 
 function startGame(){
+    movingEntities = false;
     explosionAnimations = [];
     fallingEntities = [];
     movingPaused = true;
     gamePaused = false;
-    level.loadLevel();
+    levelsMenager.loadLevel();
     lookForConnections();
     map.renderMap();
     gameLoop();
@@ -509,7 +503,7 @@ function selectSlot(event){
 
                 if(selectedSlot.entity.busy == true || selectedSlot.entity.type == wall){
                     disselectAll();
-                } // diselect if entity make some actions or it is a wall.
+                }
 
                 else if(!firstSelected){
                     firstSelected = selectedSlot
@@ -518,11 +512,11 @@ function selectSlot(event){
                 else if(firstSelected.brothers.includes(selectedSlot)){
                     secondSelected = selectedSlot
                     startEntityMovment();
-                    level.afterMove();
+                    levelsMenager.afterMove();
                 }
                 else if (firstSelected == selectedSlot){
                     if(lookForBombs(firstSelected,selectedSlot)){
-                        level.afterMove();
+                        levelsMenager.afterMove();
                     } 
                     disselectAll();
                     
@@ -894,7 +888,7 @@ function makeBombs(blasters,bigBombs,smallBombs,toDestroy){
         if(toclear.entity){
             let type = toclear.entity.type;
             if(type != blaster && type != bomb && type != smallbomb){
-                level.givePoint(toclear.entity.code)
+                levelsMenager.givePoint(toclear.entity.code)
                 toclear.entity = false;
                 renderSlot(toclear);
                 startExplosionAnimation(toclear,1)
@@ -908,7 +902,7 @@ function makeBombs(blasters,bigBombs,smallBombs,toDestroy){
 function clearSlots(slots){
     audioPlayer.playAudio(1);
     for(let slot of slots){
-        level.givePoint(slot.entity.code)
+        levelsMenager.givePoint(slot.entity.code)
         slot.entity = false; 
         ctx.clearRect(slot.realX,slot.realY,slotSize,slotSize);
         startExplosionAnimation(slot,1)
@@ -983,7 +977,7 @@ function gameLoop(){
             slot.addEntity(blocker,"blocker")
             if(slot.y == center_y){
                 if(slot.x == 3 || slot.x == 4 || slot.x == 6){
-                    slot.addEntity(fruits[0],"enti-0");
+                    slot.addEntity(entities[0],"enti-0");
                 }
             }
         })
@@ -1016,22 +1010,54 @@ function gameLoop(){
                 slot.addEntity(wall,"wall");
             } 
             else{
-                if(slot.y == center_y){
+                if(slot.y == center_y-2 || slot.y == center_y+2){
                     slot.addEntity(bomb,"bomb")
                 }
             }
         })
     };
 
+    let lvl5 = function(){
+        map.allSlots.forEach((slot)=>{
+            if(slot.x == 0 || slot.x == map.width){
+                slot.addEntity(wall,"wall");
+            } 
+            else if(slot.x == 1 || slot.x == map.width-1){
+                if(slot.y%2 == 0){
+                    slot.addEntity(wall,"wall")
+                }
+            }
+        })
+    };
 
-    level.createNew(1,5,lvl1,{"enti-0":3});
-    level.createNew(16,5,lvl2,{"enti-0":10,"enti-1":10,"enti-2":10});
-    level.createNew(20,6,lvl3,{"enti-0":13,"enti-1":13});
-    level.createNew(12,6,lvl4,{"enti-3":13},true);
-    level.createNew(15,7,lvl3,{"enti-4":13});
-    level.createNew(15,7,lvl3,{"enti-5":13});
-    level.createNew(23,8,lvl3,{"enti-6":13});
-    level.createNew(23,8,lvl3,{"enti-7":13});
+    let lvl6 = function(){
+        map.allSlots.forEach((slot)=>{
+            if(slot.x == center_x || slot.y == center_y){
+                slot.addEntity(wall,"wall");
+            }
+            else if(slot.x == center_x-1 && slot.y == center_y-1){
+                slot.addEntity(bomb,"bomb");
+            } 
+        })
+    }
+
+    let lvl7 = function(){
+        map.allSlots.forEach((slot)=>{
+            if(slot.x == 0 || slot.x == map.width || slot.y == 0 || slot.y == map.height){
+                slot.addEntity(blocker,"blocker");
+            } 
+        })
+    }
+
+
+    levelsMenager.createNew(1,5,lvl1,{"enti-0":3});
+    levelsMenager.createNew(16,5,lvl2,{"enti-0":10,"enti-1":10,"enti-2":10});
+    levelsMenager.createNew(13,6,lvl3,{"enti-0":13,"enti-1":13});
+    levelsMenager.createNew(15,6,lvl4,{"enti-3":20},true);
+    levelsMenager.createNew(16,5,lvl5,{"smallbomb":5});
+    levelsMenager.createNew(15,7,lvl6,{"enti-5":13});
+    levelsMenager.createNew(23,7,lvl7,{"enti-6":13},true);
+    levelsMenager.createNew(30,5,()=>{},{"bomb":5});
 
 }());
 
@@ -1040,7 +1066,7 @@ function gameLoop(){
 (function(){
 
 for(let img of document.getElementsByName("game-entity")){
-    fruits.push(img)
+    entities.push(img)
 }
 
 for(let img of document.getElementsByName("game-effect-bomb")){
@@ -1048,14 +1074,15 @@ for(let img of document.getElementsByName("game-effect-bomb")){
 }
 
 for(let button of document.getElementsByName("select-level")){
-    level.selectLevelButtons[parseInt(button.value)] = button;
+    levelsMenager.selectLevelButtons[parseInt(button.value)] = button;
     button.addEventListener("click",(e)=>{
-        level.actual = parseInt(e.target.value);
+        levelsMenager.actual = parseInt(e.target.value);
     })
 }
 
 audioPlayer.normalizeVolume();
 menuPagesMenager.firstLoad();
+scoreBoard.init();
 canvas.addEventListener("mousedown",selectSlot)
 document.getElementById("start-game-button").addEventListener("click",startGame)
 document.getElementById("pause-game-button").addEventListener("click",()=>{gamePaused = true})
