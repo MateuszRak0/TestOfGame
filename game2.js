@@ -9,9 +9,6 @@ const bombs = [blaster,bomb,smallbomb];
 const noForConnect = [blaster,bomb,smallbomb,wall,blocker];
 
 const ctx = canvas.getContext("2d");
-ctx.shadowOffsetX = 0;
-ctx.shadowOffsetY = 0;
-ctx.shadowBlur = 3;
 
 let gamePaused = false;
 let movingPaused = true;
@@ -24,7 +21,6 @@ let explosionAnimationFrames = [];
 let movingEntities = false;
 let firstSelected;
 let secondSelected;
-
 
 let map = new Map();
 
@@ -51,7 +47,6 @@ let audioPlayer = {
         audio.play()
     },
 }
-
 
 let scoreBoard = {
     movesDisplay:document.getElementById("display-moves"),
@@ -107,6 +102,7 @@ let levelsMenager = {
     actual:0,
     moves:0,
     selected:false,
+    nextLevel:1,
 
     createNew:function(moves,entities,specialFunctions,goals,fillAll = false){
         let newLevel = {
@@ -149,7 +145,7 @@ let levelsMenager = {
         if(this.moves < 0){
             gamePaused = true;
             audioPlayer.playAudio(7);
-            menuPagesMenager.showPage("game-over");
+            menuPages.showPage("game-over");
         }
     },
 
@@ -160,31 +156,31 @@ let levelsMenager = {
                 let index = this.actualGoals.indexOf(goalName);
                 this.actualGoals.splice(index, 1);
                 if(this.actualGoals.length == 0){
-                    this.gameover();
+                    this.gameWin();
                 }
             }
         }
     },
 
-    gameover:function(){
+    gameWin:function(){
         let msgBox = document.getElementById("after-win-message");
         audioPlayer.playAudio(2);
         disselectAll();
         scoreBoard.hideAllGoals();
-        menuPagesMenager.showPage("winner-page");
-        let nextLevel = this.actual + 1;
-        if(nextLevel <= 7){
-            msgBox.innerHTML = `Unlocked level ${nextLevel+1}`;
-            let nextLevelButton = this.selectLevelButtons[nextLevel];
-            nextLevelButton.disabled = false;
+        menuPages.showPage("winner-page");
+        this.nextLevel = this.actual + 1;
+        if(this.nextLevel <= 7){
+            msgBox.innerHTML = `Unlocked level ${this.nextLevel+1}`;
+            let button = this.selectLevelButtons[this.nextLevel];
+            button.disabled = false;
         } else{
             msgBox.innerHTML = `Congratulations you pass final level !`;
         }
-        setTimeout(()=>{gamePaused = true},1000);
+        setTimeout(()=>{gamePaused = true},500);
     }
 }
 
-let menuPagesMenager = {
+let menuPages = {
     pages:{},
     activPage:undefined,
 
@@ -216,8 +212,6 @@ let menuPagesMenager = {
         }
     }
 }
-
-//#######################
 
 function Slot(x,y){
     this.x = x;
@@ -296,12 +290,12 @@ function Slot(x,y){
 function Entity(startX,startY=0,bytype){
     this.y = startY;
     this.x = startX;
-    let random = Math.floor(Math.random() * levelsMenager.getData("entities"))
     if(bytype){
         this.type = bytype.type;
         this.code = bytype.code;
     } 
     else{
+        let random = Math.floor(Math.random() * levelsMenager.getData("entities"))
         this.type = entities[random];
         this.code = `enti-${random}`;
     }
@@ -363,12 +357,8 @@ function Map(){
         }
     }
 
-    this.clearMap = function(){
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-    }
-    
-
     this.renderMap = function(slots = this.allSlots){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
         for(let slot of slots){
                 if(slot.entity){
                     slot.entity.render();
@@ -377,7 +367,6 @@ function Map(){
     }
 
     this.fillSlots = function(fillAll){
-        this.clearMap();
         this.allSlots.forEach(slot => {
                 slot.entity = false;
                 if(fillAll) slot.entity = new Entity();
@@ -411,19 +400,19 @@ function countMapSurface(){
     return {x:x-1,y:y-1}
 }   
 
-//#######################
-
 function startGame(){
     movingEntities = false;
     explosionAnimations = [];
     fallingEntities = [];
     movingPaused = true;
-    gamePaused = false;
     levelsMenager.loadLevel();
     lookForConnections();
     map.renderMap();
-    gameLoop();
-    setTimeout(()=>{movingPaused = false},1000);
+    setTimeout(()=>{
+        movingPaused = false
+        gamePaused = false;
+        gameLoop();
+    },1000);
 }
 
 function addEntities(){
@@ -435,7 +424,7 @@ function addEntities(){
     }
 }
 
-function liveEntites(){
+function entitiesGravity(){
     let landed = true;
     fallingEntities.forEach(entity=>{
         entity.fall()
@@ -493,8 +482,6 @@ function jumpOverWall(slot){
     }
 }
 
-//#######################
-
 function selectSlot(event){
     if(gamePaused == false && !movingPaused ){
         let selectedSlot = map.returnSlotByPosition(event.offsetX,event.offsetY);
@@ -544,7 +531,6 @@ function startEntityMovment(firstTime = true){
     movingEntities = buffor;
 }
 
-
 function animateEntityMovment(){
         let animation = movingEntities;
         if(animation.steps > 0){
@@ -575,7 +561,6 @@ function animateEntityMovment(){
 
 }
 
-
 function checkAfterMove(firstSlot,secondSlot){
     if(!gamePaused){
         if(!lookForBombs(firstSlot,secondSlot)){
@@ -592,7 +577,6 @@ function checkAfterMove(firstSlot,secondSlot){
     }
 
 }
-
 
 function replaceEntities(firstSlot,secondSlot){
         if(firstSlot && secondSlot){
@@ -615,6 +599,9 @@ function disselectAll(){
 }
 
 function focusSelected(){
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.shadowBlur = 3;
     ctx.shadowColor = "yellow";
     if(firstSelected){
         ctx.clearRect(firstSelected.realX,firstSelected.realY,slotSize,slotSize);
@@ -628,8 +615,6 @@ function focusSelected(){
     }
     ctx.shadowColor = "transparent";
 }
-
-//#######################
 
 function countExplosionSurface(startSlot,power=false){
     audioPlayer.playAudio(3);
@@ -677,7 +662,6 @@ function useBlaster(startSlot,blasterslot){
     ctx.stroke();
     setTimeout((toremove)=>{
         clearSlots(toremove);
-        map.clearMap();
         map.renderMap();
         dropAllEntities();
         
@@ -859,7 +843,6 @@ function renderSlot(slot){
 
 }
 
-
 function makeSingleBomb(data,bomb){
     data.slot.entity.type = bomb;
     renderSlot(data.slot);
@@ -906,9 +889,8 @@ function clearSlots(slots){
         slot.entity = false; 
         ctx.clearRect(slot.realX,slot.realY,slotSize,slotSize);
         startExplosionAnimation(slot,1)
+    }
 }
-}
-
 
 function startExplosionAnimation(slot,power=2){
     if(power === true){
@@ -931,7 +913,6 @@ function startExplosionAnimation(slot,power=2){
 
 }
 
-
 function animateExplosions(){
     if(explosionAnimations.length > 0){
         let inProgress = false;
@@ -945,7 +926,6 @@ function animateExplosions(){
         })
         if(!inProgress){
             explosionAnimations = [];
-            map.clearMap();
             map.renderMap();
         }
     }
@@ -954,7 +934,7 @@ function animateExplosions(){
 
 function gameLoop(){
     if(fallingEntities.length > 0){
-        liveEntites();
+        entitiesGravity();
     } 
         
     else{
@@ -1032,7 +1012,7 @@ function gameLoop(){
 
     let lvl6 = function(){
         map.allSlots.forEach((slot)=>{
-            if(slot.x == center_x || slot.y == center_y){
+            if(slot.x == center_x){
                 slot.addEntity(wall,"wall");
             }
             else if(slot.x == center_x-1 && slot.y == center_y-1){
@@ -1080,22 +1060,26 @@ for(let button of document.getElementsByName("select-level")){
     })
 }
 
+
 audioPlayer.normalizeVolume();
-menuPagesMenager.firstLoad();
+menuPages.firstLoad();
 scoreBoard.init();
-canvas.addEventListener("mousedown",selectSlot)
-document.getElementById("start-game-button").addEventListener("click",startGame)
-document.getElementById("pause-game-button").addEventListener("click",()=>{gamePaused = true})
-document.getElementById("resume-game-button").addEventListener("click",()=>{
-    gamePaused = false;
-    gameLoop();
+canvas.addEventListener("mousedown",selectSlot);
+document.getElementById("start-game-button").addEventListener("click",startGame);
+document.getElementById("restart-game-button").addEventListener("click",startGame);
+document.getElementById("retry-game-button").addEventListener("click",startGame);
+document.getElementById("pause-game-button").addEventListener("click",()=>{gamePaused = true});
+document.getElementById("resume-game-button").addEventListener("click",()=>{ gamePaused = false; gameLoop(); })
+document.getElementById("nextlevel-game-button").addEventListener("click",()=>{
+    levelsMenager.actual = levelsMenager.nextLevel;
+    startGame();
 })
 }());
 
-
+//Loading loop
 function loading(){
     if(document.readyState == "complete"){
-        let startButton = document.getElementById("first-button")
+        let startButton = document.getElementById("first-button");
         startButton.disabled = false;
         startButton.innerHTML = "Click to start";
     } else{
