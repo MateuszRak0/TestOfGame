@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gems Hunter</title>
     <link rel="stylesheet" href="ruinsColector.css">
-    <script src="game2.js" defer></script>
+    <script src="game.js" defer></script>
 </head>
 
 <body>
@@ -110,8 +110,7 @@
                     <label class="select-level-button"><input type="radio" name="select-level"
                             value="7" disabled><span>8</span></label>
                 </div>
-                <button type="button" class="show-menu-page-button" value="ingame-page" id="start-game-button">Start
-                    Game</button>
+                <button type="button" class="show-menu-page-button" value="ingame-page" id="start-game-button">Start Game</button>
                 <button type="button" class="show-menu-page-button" value="main-page">Return</button>
             </div>
 
@@ -258,8 +257,8 @@
 
             <div class="game-menu-page" name="pause-page">
                 <span class="game-menu-page-bigTitle">Game paused</span>
-                <button type="button" class="show-menu-page-button" value="ingame-page" id="resume-game-button">Resume
-                    Game</button>
+                <button type="button" class="show-menu-page-button" value="ingame-page" id="resume-game-button">Resume Game</button>
+                <button type="button" class="show-menu-page-button" value="ingame-page" id="restart-game-button">Restart Game</button>
                 <button type="button" class="show-menu-page-button" value="main-page">Back to menu</button>
             </div>
 
@@ -267,11 +266,13 @@
                 <span class="game-menu-page-bigTitle">Game Over</span>
                 <p>End of Moves!</p>
                 <button type="button" class="show-menu-page-button" value="main-page">Back to menu</button>
+                <button type="button" class="show-menu-page-button" value="ingame-page" id="retry-game-button">Try again</button>
             </div>
 
             <div class="game-menu-page" name="winner-page">
                 <span class="game-menu-page-bigTitle">You Win !</span>
                 <p id="after-win-message">unlocked the next level</p>
+                <button type="button" class="show-menu-page-button" value="ingame-page" id="nextlevel-game-button">Next Level</button>
                 <button type="button" class="show-menu-page-button" value="main-page">Back to menu</button>
             </div>
 
