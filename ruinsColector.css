@@ -176,7 +176,7 @@ div[name="select-level-page"] div span{
 }
 
 .select-level-button input[type="radio"]:disabled{
-    background-color: rgba(118, 15, 15, 0.6);
+    background-color: rgba(33, 14, 14, 0.6);
 }
 
 #display-moves::before{
@@ -197,7 +197,6 @@ div[name="select-level-page"] div span{
 .goal-box{
     height: 60%;
     max-width: 0;
-    margin: 0 5px;
     overflow: hidden;
     position: sticky;
     display: flex;
@@ -209,6 +208,7 @@ div[name="select-level-page"] div span{
 }
 
 .goal-box-active{
+    margin: 0 5px;
     max-width: 45%;
     -webkit-box-shadow: 0px 0px 2px 0px rgb(255, 255, 255);
     -moz-box-shadow: 0px 0px 2px 0px rgb(255, 255, 255);
