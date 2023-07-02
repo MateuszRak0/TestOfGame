@@ -599,19 +599,24 @@ function disselectAll(){
 }
 
 function focusSelected(){
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
-    ctx.shadowBlur = 3;
-    ctx.shadowColor = "yellow";
     if(firstSelected){
+
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.shadowBlur = 3;
+        ctx.shadowColor = "yellow";
+
         ctx.clearRect(firstSelected.realX,firstSelected.realY,slotSize,slotSize);
         let img = firstSelected.entity.type;
         ctx.drawImage(img,firstSelected.realX,firstSelected.realY,slotSize,slotSize);
+
     }
     if(secondSelected){
+
         ctx.clearRect(secondSelected.realX,secondSelected.realY,slotSize,slotSize);
         let img = secondSelected.entity.type;
         ctx.drawImage(img,secondSelected.realX,secondSelected.realY,slotSize,slotSize);
+
     }
     ctx.shadowColor = "transparent";
 }
@@ -663,6 +668,7 @@ function useBlaster(startSlot,blasterslot){
     setTimeout((toremove)=>{
         clearSlots(toremove);
         map.renderMap();
+        focusSelected();
         dropAllEntities();
         
     },500,toremove)
@@ -927,6 +933,7 @@ function animateExplosions(){
         if(!inProgress){
             explosionAnimations = [];
             map.renderMap();
+            focusSelected();
         }
     }
 }
@@ -1000,7 +1007,9 @@ function gameLoop(){
     let lvl5 = function(){
         map.allSlots.forEach((slot)=>{
             if(slot.x == 0 || slot.x == map.width){
-                slot.addEntity(wall,"wall");
+                if(slot.y%2 == 0){
+                    slot.addEntity(wall,"wall");
+                }
             } 
             else if(slot.x == 1 || slot.x == map.width-1){
                 if(slot.y%2 == 0){
@@ -1035,9 +1044,9 @@ function gameLoop(){
     levelsMenager.createNew(13,6,lvl3,{"enti-0":13,"enti-1":13});
     levelsMenager.createNew(15,6,lvl4,{"enti-3":20},true);
     levelsMenager.createNew(16,5,lvl5,{"smallbomb":5});
-    levelsMenager.createNew(15,7,lvl6,{"enti-5":13});
+    levelsMenager.createNew(15,7,lvl6,{"enti-5":13},true);
     levelsMenager.createNew(23,7,lvl7,{"enti-6":13},true);
-    levelsMenager.createNew(30,5,()=>{},{"bomb":5});
+    levelsMenager.createNew(30,5,()=>{},{"bomb":4});
 
 }());
 
@@ -1071,8 +1080,10 @@ document.getElementById("retry-game-button").addEventListener("click",startGame)
 document.getElementById("pause-game-button").addEventListener("click",()=>{gamePaused = true});
 document.getElementById("resume-game-button").addEventListener("click",()=>{ gamePaused = false; gameLoop(); })
 document.getElementById("nextlevel-game-button").addEventListener("click",()=>{
-    levelsMenager.actual = levelsMenager.nextLevel;
-    startGame();
+    setTimeout(()=>{
+        levelsMenager.actual = levelsMenager.nextLevel;
+        startGame();
+    },500)
 })
 }());
 
